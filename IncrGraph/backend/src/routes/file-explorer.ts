@@ -389,7 +389,7 @@ const writeCache = (cacheData: Cache): void => {
 
 // 	return componentMatches;
 // };
-router.post("/add-module", async (req: Request, res: Response) => {
+router.post("/module", async (req: Request, res: Response) => {
 	const directoryPath = req.body.directory as string;
 	if (!directoryPath) {
 		return res.status(400).json({ error: "Directory path is required" });
@@ -419,7 +419,7 @@ router.post("/add-module", async (req: Request, res: Response) => {
 	res.status(201).json({ message: "Directory added to cache", cache });
 });
 
-router.delete("/remove-module", async (req: Request, res: Response) => {
+router.delete("/module", async (req: Request, res: Response) => {
 	const directoryPath = req.body.directory as string;
 	if (!directoryPath) {
 		return res.status(400).json({ error: "Directory path is required" });
