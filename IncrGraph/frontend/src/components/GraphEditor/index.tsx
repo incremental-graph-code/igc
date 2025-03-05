@@ -24,7 +24,7 @@ import ReactFlow, {
 	getTransformForBounds,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import "./EditorPane.css";
+import "./GraphEditor.css";
 import {
 	addEdge,
 	getEdgeId,
@@ -54,11 +54,10 @@ import { isGraphNode } from "@/IGCItems/nodes/GraphNode";
 import { fileExists } from "@/requests";
 
 import { toPng, toSvg } from "html-to-image";
-import path from "path-browserify";
 
-interface EditorPaneProps {}
+interface GraphEditorProps {}
 
-const EditorPane: React.FC<EditorPaneProps> = ({}) => {
+const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 	// VARIABLES
 	// Store variables
 	const fileContent = useStore((state) => state.fileContent);
@@ -587,4 +586,4 @@ const EditorPane: React.FC<EditorPaneProps> = ({}) => {
 	);
 };
 
-export default EditorPane;
+export default GraphEditor;

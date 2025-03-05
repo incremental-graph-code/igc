@@ -247,7 +247,7 @@ interface ModuleChangeRequest {
 export const callAddModule = (directoryPath: string) => {
 	const options: UseAxiosRequestOptions<ModuleChangeRequest> = {
 		method: "POST",
-		route: "/api/file-explorer/add-module",
+		route: "/api/file-explorer/module",
 		useJWT: false,
 		data: {
 			directory: directoryPath,
@@ -260,7 +260,7 @@ export const callAddModule = (directoryPath: string) => {
 export const callRemoveModule = (directoryPath: string) => {
 	const options: UseAxiosRequestOptions<ModuleChangeRequest> = {
 		method: "DELETE",
-		route: "/api/file-explorer/remove-module",
+		route: "/api/file-explorer/module",
 		useJWT: false,
 		data: {
 			directory: directoryPath,

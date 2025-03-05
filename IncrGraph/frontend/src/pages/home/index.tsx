@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import RootPage from "../root";
 import FileExplorer from "../../components/FileExplorer";
-import EditorPane from "../../components/EditorPane";
+import GraphEditor from "../../components/GraphEditor";
 import FileEditor from "../../components/FileEditor";
 import "./home.css";
 import useConfirmDialog from "@components/ConfirmDialog/useConfirmDialog";
@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
 			<div className="app-container">
 				<>
 					<FileExplorer openTextDialog={openTextDialog} />
-					<EditorPane />
+					<GraphEditor />
 					<FileEditor openConfirmDialog={openConfirmDialog} />
 					<ConfirmDialogPortal />
 					<TextDialogPortal />
