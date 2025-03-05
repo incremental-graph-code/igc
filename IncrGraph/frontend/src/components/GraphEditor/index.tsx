@@ -547,9 +547,9 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 							nodes={nodes}
 							edges={edges}
 							onNodesChange={onNodesChange}
-							onEdgesDelete={onEdgesDelete}
-							onNodesDelete={onNodesDelete}
 							onEdgesChange={onEdgesChange}
+							onNodesDelete={onNodesDelete}
+							onEdgesDelete={onEdgesDelete}
 							onConnect={onConnect}
 							nodeTypes={getNodeTypes}
 							onNodeDoubleClick={onNodeDoubleClick}
@@ -562,6 +562,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 								reactFlowInstance.current = instance;
 								handlePanToStartNode();
 							}}
+                            proOptions={{hideAttribution: true}}
 						>
 							<MiniMap className="react-flow__minimap" />
 							<Controls

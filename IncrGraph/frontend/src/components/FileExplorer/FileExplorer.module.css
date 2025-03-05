@@ -35,9 +35,3 @@
 	width: 100%;
 	background-color: transparent;
 }
-
-.treeViewContainer {
-    margin-left: 10px;
-    overflow-y: auto;
-    max-height: 100%;
-}

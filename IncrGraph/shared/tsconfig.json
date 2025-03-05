@@ -1,8 +1,9 @@
 {
 	"compilerOptions": {
-		"target": "ES2020",
-		"module": "commonjs",
-		"lib": ["ES2020"],
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"lib": ["ESNext"],
 		"outDir": "./dist",
 		"rootDir": "./src",
 		"strict": true,

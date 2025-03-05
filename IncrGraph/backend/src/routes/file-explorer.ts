@@ -13,6 +13,7 @@ import {
 	IGCSession,
 	IGCCodeNodeExecution,
 	SessionDataDeleteExecutionRequest,
+    FileNodeType,
 } from "shared";
 
 const router = Router();
@@ -54,7 +55,7 @@ const getDirectoryStructure = (dirPath: string): FileNode[] => {
 		return {
 			name: file,
 			fullPath: filePath,
-			type: isDirectory ? "directory" : "file",
+			type: isDirectory ? FileNodeType.Directory : FileNodeType.File,
 			children: isDirectory ? getDirectoryStructure(filePath) : [],
 		};
 	});

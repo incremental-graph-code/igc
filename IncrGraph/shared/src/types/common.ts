@@ -15,10 +15,14 @@ export interface SetFileContentRequest {
 	path: string;
 	content: string;
 }
+export enum FileNodeType {
+    File,
+    Directory,
+}
 export interface FileNode {
 	name: string;
 	fullPath: string;
-	type: "file" | "directory";
+	type: FileNodeType;
 	children?: FileNode[];
 }
 export interface GetFileTreeRequest {

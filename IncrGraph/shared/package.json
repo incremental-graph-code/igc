@@ -2,11 +2,15 @@
 	"name": "shared",
 	"version": "1.0.1",
 	"main": "dist/index.js",
+    "module": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "rm -rf dist && tsc --incremental false"
 	},
 	"dependencies": {
 		"winston": "^3.13.1"
+	},
+	"devDependencies": {
+		"typescript": "^5.8.2"
 	}
 }
