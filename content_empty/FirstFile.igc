@@ -1,1 +1,0 @@
-{"nodes":[{"id":"start","type":"StartNode","data":{"label":"Start"},"position":{"x":0,"y":-100},"positionAbsolute":{"x":0,"y":-100},"style":{"cursor":"grab"},"width":23,"height":23,"selected":false,"draggable":false}],"edges":[]}
