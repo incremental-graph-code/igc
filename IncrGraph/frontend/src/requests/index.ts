@@ -1,5 +1,5 @@
 // This file is for creating requests to the backend API
-import { sendAxiosRequest, UseAxiosRequestOptions } from "@/utils/requests";
+import { sendAxiosRequest, useAxiosRequest, UseAxiosRequestOptions } from "@/utils/requests";
 import {
 	CodeAnalysisRequest,
 	CodeAnalysisResponse,
@@ -135,7 +135,7 @@ export const callExecuteMany = (
 	return sendAxiosRequest<CodeManyExecutionRequest, Empty>(options);
 };
 
-export const getFileTree = (projectDirectory: string) => {
+export const getFileTree = (projectDirectory: string): Promise<FileNode[]> => {
 	const options: UseAxiosRequestOptions<GetFileTreeRequest> = {
 		method: "GET",
 		route: "/api/file-explorer/file-tree",
@@ -147,6 +147,7 @@ export const getFileTree = (projectDirectory: string) => {
 
 	return sendAxiosRequest<GetFileTreeRequest, FileNode[]>(options);
 };
+
 export const renameFileOrDirectory = (oldPath: string, newPath: string) => {
 	const options: UseAxiosRequestOptions<RenameRequest> = {
 		method: "PUT",
@@ -247,7 +248,7 @@ interface ModuleChangeRequest {
 export const callAddModule = (directoryPath: string) => {
 	const options: UseAxiosRequestOptions<ModuleChangeRequest> = {
 		method: "POST",
-		route: "/api/file-explorer/add-module",
+		route: "/api/file-explorer/module",
 		useJWT: false,
 		data: {
 			directory: directoryPath,
@@ -260,7 +261,7 @@ export const callAddModule = (directoryPath: string) => {
 export const callRemoveModule = (directoryPath: string) => {
 	const options: UseAxiosRequestOptions<ModuleChangeRequest> = {
 		method: "DELETE",
-		route: "/api/file-explorer/remove-module",
+		route: "/api/file-explorer/module",
 		useJWT: false,
 		data: {
 			directory: directoryPath,

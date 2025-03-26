@@ -3,6 +3,11 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { Divider } from "@mui/material";
 
+export type ContextMenuState = {
+    mouseX: number;
+    mouseY: number;
+} | null;
+
 interface ContextMenuProps {
 	mouseX: number | null;
 	mouseY: number | null;

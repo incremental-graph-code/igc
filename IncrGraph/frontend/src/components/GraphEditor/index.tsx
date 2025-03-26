@@ -24,7 +24,7 @@ import ReactFlow, {
 	getTransformForBounds,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import "./EditorPane.css";
+import "./GraphEditor.css";
 import {
 	addEdge,
 	getEdgeId,
@@ -54,11 +54,10 @@ import { isGraphNode } from "@/IGCItems/nodes/GraphNode";
 import { fileExists } from "@/requests";
 
 import { toPng, toSvg } from "html-to-image";
-import path from "path-browserify";
 
-interface EditorPaneProps {}
+interface GraphEditorProps {}
 
-const EditorPane: React.FC<EditorPaneProps> = ({}) => {
+const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 	// VARIABLES
 	// Store variables
 	const fileContent = useStore((state) => state.fileContent);
@@ -548,9 +547,9 @@ const EditorPane: React.FC<EditorPaneProps> = ({}) => {
 							nodes={nodes}
 							edges={edges}
 							onNodesChange={onNodesChange}
-							onEdgesDelete={onEdgesDelete}
-							onNodesDelete={onNodesDelete}
 							onEdgesChange={onEdgesChange}
+							onNodesDelete={onNodesDelete}
+							onEdgesDelete={onEdgesDelete}
 							onConnect={onConnect}
 							nodeTypes={getNodeTypes}
 							onNodeDoubleClick={onNodeDoubleClick}
@@ -563,6 +562,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({}) => {
 								reactFlowInstance.current = instance;
 								handlePanToStartNode();
 							}}
+                            proOptions={{hideAttribution: true}}
 						>
 							<MiniMap className="react-flow__minimap" />
 							<Controls
@@ -587,4 +587,4 @@ const EditorPane: React.FC<EditorPaneProps> = ({}) => {
 	);
 };
 
-export default EditorPane;
+export default GraphEditor;

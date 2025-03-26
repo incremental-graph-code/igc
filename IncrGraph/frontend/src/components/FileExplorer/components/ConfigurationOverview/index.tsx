@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import ConfigurationDisplay from "../ConfigurationDisplay";
-import CustomSelect from "../CustomSelect";
+import ConfigurationDisplay from "../../../ConfigurationDisplay";
+import CustomSelect from "../../../CustomSelect";
 import styles from "./ConfigurationOverview.module.css";
 import useStore from "@/store/store";
 import { STYLES } from "@/styles/constants";

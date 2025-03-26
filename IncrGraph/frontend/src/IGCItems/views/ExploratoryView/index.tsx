@@ -103,9 +103,11 @@ const findExecutionTreeNodePath = (
 ): boolean => {
 	// Deep comparison of originalId and label
 	if (
+        executionPath.length > pathIndex &&
+        executionPath[pathIndex].id !== undefined && (
 		node.originalId !== executionPath[pathIndex].id ||
 		node.label !==
-			`${executionPath[pathIndex].label} (${executionPath[pathIndex].id})`
+			`${executionPath[pathIndex].label} (${executionPath[pathIndex].id})`)
 	) {
 		return false;
 	}
