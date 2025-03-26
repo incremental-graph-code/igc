@@ -19,7 +19,7 @@ import OpenDirectoryButton from "../OpenDirectoryButton";
 import useStore from "@/store/store";
 import ThemeToggle from "../ThemeToggle";
 import styles from './NavBar.module.css'; // Import the CSS module
-import { usePopupContext } from "../Popup/PopupProvider";
+import { usePopupContext } from "../../providers/Popup/PopupProvider";
 import AddOnManager from "../AddOnManager/AddOnManager";
 import { isCodeNode } from "@/IGCItems/nodes/CodeNode";
 

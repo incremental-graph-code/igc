@@ -1,7 +1,5 @@
-// GlobalKeyDownProvider.tsx
-import React, {
+import {
 	createContext,
-	useContext,
 	useEffect,
 	useRef,
 	FC,
@@ -16,12 +14,12 @@ interface GlobalKeyDownContextValue {
 	subscribe: (listener: KeyPressListener) => () => void;
 }
 
-// 1) Create the context; the default is `undefined` so we can check for it.
+//Create the context; the default is `undefined` so we can check for it.
 export const GlobalKeyDownContext = createContext<
 	GlobalKeyDownContextValue | undefined
 >(undefined);
 
-// 2) Create a provider component
+// Create a provider component
 interface GlobalKeyDownProviderProps {
 	children: ReactNode;
 }

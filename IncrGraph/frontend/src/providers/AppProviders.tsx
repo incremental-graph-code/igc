@@ -5,7 +5,7 @@ import { GlobalKeyDownProvider } from "./GlobalKeyDownProvider";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { ThemeProvider } from "@mui/material/styles";
 
-import { PopupProvider } from "@/components/Popup/PopupProvider";
+import { PopupProvider } from "@/providers/Popup/PopupProvider";
 
 
 
