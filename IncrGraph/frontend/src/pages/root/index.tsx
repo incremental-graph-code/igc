@@ -2,45 +2,40 @@ import { FC, ReactNode } from "react";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import "./root.css";
 import Navbar from "../../components/NavBar";
-import { ThemeProvider } from "@mui/material/styles";
-import { useThemeMode } from "@/hooks/useThemeMode";
-import { PopupProvider } from "@/components/Popup/PopupProvider";
 import { STYLES } from "@/styles/constants";
-import { Box, Container, Typography } from "@mui/material";
+import { Box} from "@mui/material";
+import { AppProviders } from "@/providers/AppProviders";
 
 interface RootPageProps {
 	children?: ReactNode;
 }
 
 const RootPage: FC<RootPageProps> = ({ children }) => {
-	const [theme] = useThemeMode();
-
 	return (
-		<ThemeProvider theme={theme}>
-			<PopupProvider>
+		<AppProviders>
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					height: "100vh",
+					overflow: "hidden",
+				}}
+			>
+				<Navbar />
 				<Box
+					component="main"
 					sx={{
-						display: "flex",
-						flexDirection: "column",
-						height: "100vh",
+						flexGrow: 1,
 						overflow: "hidden",
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						p: "3px",
 					}}
 				>
-					<Navbar />
-					<Box
-						component="main"
-						sx={{
-							flexGrow: 1,
-							overflow: "hidden",
-							display: "flex",
-							justifyContent: "center",
-							alignItems: "center",
-							p: "3px",
-						}}
-					>
-						{children}
-					</Box>
-					{/* <Box
+					{children}
+				</Box>
+				{/* <Box
 						component="footer"
 						sx={{
 							position: "relative",
@@ -54,7 +49,7 @@ const RootPage: FC<RootPageProps> = ({ children }) => {
 							{/* <div className="footer-logo">
 								
 							</div> */}
-							{/* <div
+				{/* <div
 								className="footer-social"
 								style={{ textAlign: "center", height: STYLES.footerHeight }}
 							>
@@ -70,31 +65,30 @@ const RootPage: FC<RootPageProps> = ({ children }) => {
 							</div>
 						</Container>
 					</Box> */}
-					{/* <div style={{ flexGrow: 1}}>{children}</div> */}
-					{/* <div style={{height: "550px", width: "100%", display: "block"}}></div> */}
-					<div className="footer">
-						<div className="footer-content">
-							<div className="footer-logo">
-								<p>Incremental Graph Code</p>
-							</div>
-							<div
-								className="footer-social"
-								style={{ height: STYLES.footerHeight }}
+				{/* <div style={{ flexGrow: 1}}>{children}</div> */}
+				{/* <div style={{height: "550px", width: "100%", display: "block"}}></div> */}
+				<div className="footer">
+					<div className="footer-content">
+						<div className="footer-logo">
+							<p>Incremental Graph Code</p>
+						</div>
+						<div
+							className="footer-social"
+							style={{ height: STYLES.footerHeight }}
+						>
+							<a
+								href="https://github.com/MaxMB15/MSc-SE-Master-Project/tree/main/IncrGraph"
+								target="_blank"
+								rel="noopener noreferrer"
+								style={{ paddingRight: "50px" }}
 							>
-								<a
-									href="https://github.com/MaxMB15/MSc-SE-Master-Project/tree/main/IncrGraph"
-									target="_blank"
-									rel="noopener noreferrer"
-                                    style={{paddingRight: "50px"}}
-								>
-									<GitHubIcon style={{ color: "#ffffff" }} />
-								</a>
-							</div>
+								<GitHubIcon style={{ color: "#ffffff" }} />
+							</a>
 						</div>
 					</div>
-				</Box>
-			</PopupProvider>
-		</ThemeProvider>
+				</div>
+			</Box>
+		</AppProviders>
 	);
 };
 

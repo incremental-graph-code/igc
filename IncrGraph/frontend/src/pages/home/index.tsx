@@ -9,8 +9,7 @@ import useTextDialog from "@/components/TextDialog/useTextDialog";
 import { useComponentRegistry } from "@/hooks/useComponentRegistry";
 import LoadingScreen from "@/components/LoadingScreen";
 import { fetchAndRegisterComponents } from "@/utils/componentCache";
-import { ThemeProvider } from "@mui/material/styles";
-import { useThemeMode } from "@/hooks/useThemeMode";
+import { AppProviders } from "@/providers/AppProviders";
 
 const HomePage: React.FC = () => {
 	// Variables
@@ -27,26 +26,22 @@ const HomePage: React.FC = () => {
 	}, []);
 
 	// For importing and categorizing components
-    const [theme] = useThemeMode();
 	if (isLoading) {
-
 		return (
-			<ThemeProvider theme={theme}>
+			<AppProviders>
 				<LoadingScreen />
-			</ThemeProvider>
+			</AppProviders>
 		);
 	}
 
 	return (
 		<RootPage>
 			<div className="app-container">
-				<>
-					<FileExplorer openTextDialog={openTextDialog} />
-					<GraphEditor />
-					<FileEditor openConfirmDialog={openConfirmDialog} />
-					<ConfirmDialogPortal />
-					<TextDialogPortal />
-				</>
+				<FileExplorer openTextDialog={openTextDialog} />
+				<GraphEditor />
+				<FileEditor openConfirmDialog={openConfirmDialog} />
+				<ConfirmDialogPortal />
+				<TextDialogPortal />
 			</div>
 		</RootPage>
 	);
