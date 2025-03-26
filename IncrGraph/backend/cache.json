@@ -1,57 +1,7 @@
 [
   {
-    "search_path": "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes",
-    "last_updated": "2025-03-05T23:25:47.003Z",
-    "files": [
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/AbstractClassNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/BaseNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/ClassNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/CodeFragmentNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/CodeNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/DocumentationNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/GraphNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/InterfaceNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/LibraryNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/MethodNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/StartNode/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/nodes/nodeUtils.tsx"
-    ],
-    "meta": {
-      "name": "Default Nodes"
-    }
-  },
-  {
-    "search_path": "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships",
-    "last_updated": "2025-03-05T23:25:47.004Z",
-    "files": [
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/BaseRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/CustomConnectionLine.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/DependencyRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/DocumentationRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/ExecutionRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/InheritanceRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/MethodRelationship/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/relationships/OverridesRelationship/index.tsx"
-    ]
-  },
-  {
-    "search_path": "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views",
-    "last_updated": "2025-03-05T23:25:47.004Z",
-    "files": [
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/BaseView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/CodeNodeView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/ExploratoryView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/GeneralTextView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/GraphNodeView/SessionInfo.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/GraphNodeView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/NodeDocumentationView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/ProjectionView/index.tsx",
-      "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/IGCItems/views/viewUtils.tsx"
-    ]
-  },
-  {
     "search_path": "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/nodes",
-    "last_updated": "2025-03-05T23:25:47.005Z",
+    "last_updated": "2025-03-26T12:21:43.638Z",
     "files": [
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/nodes/AbstractClassNode/index.tsx",
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/nodes/BaseNode/index.tsx",
@@ -72,7 +22,7 @@
   },
   {
     "search_path": "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/relationships",
-    "last_updated": "2025-03-05T23:25:47.006Z",
+    "last_updated": "2025-03-26T12:21:43.638Z",
     "files": [
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/relationships/BaseRelationship/index.tsx",
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/relationships/CustomConnectionLine.tsx",
@@ -86,7 +36,7 @@
   },
   {
     "search_path": "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/views",
-    "last_updated": "2025-03-05T23:25:47.007Z",
+    "last_updated": "2025-03-26T12:21:43.639Z",
     "files": [
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/views/BaseView/index.tsx",
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/IGCItems/views/CodeNodeView/index.tsx",
@@ -101,7 +51,7 @@
   },
   {
     "search_path": "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/temp_import",
-    "last_updated": "2025-03-05T23:25:47.007Z",
+    "last_updated": "2025-03-26T12:21:43.639Z",
     "files": [
       "/Users/maxboksem/Code/Github/Web/igc/IncrGraph/frontend/src/temp_import/TestNode.tsx"
     ]

@@ -137,6 +137,9 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 		) {
 			setNavBarContainer(() => []);
 			setViews(newViews);
+            if(newViews.length >= activeTab) {
+                setActiveTab(newViews.length - 1);
+            }
 		}
 	}, [isIGCFile, selectedItem?.id, views, setNavBarContainer]);
 

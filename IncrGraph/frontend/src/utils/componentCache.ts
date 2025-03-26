@@ -77,6 +77,7 @@ export const importAndCategorizeComponents = async (
 		views: {},
 	};
 	try {
+        /* @vite-ignore */
 		const componentModule = await import(`${componentFilePath}`);
 
 		// Check all exports

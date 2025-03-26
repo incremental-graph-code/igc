@@ -2,7 +2,7 @@ import { getFileTree } from "@/requests";
 import useStore from "@/store/store";
 import React, { useState, useImperativeHandle, forwardRef } from "react";
 
-import { FileNode, FileNodeType } from "shared";
+import { FileNode } from "shared";
 import ContextMenu, { ContextMenuState } from "../ContextMenu";
 
 import path from "path-browserify";
@@ -21,6 +21,11 @@ import { isValidIGC } from "@/IGCItems/utils/serialization";
 import styles from "./FileNavigator.module.css";
 
 interface FileNavigatorProps {}
+
+enum FileNodeType {
+    File,
+    Directory,
+}
 
 export interface FileNavigatorRef {
 	refreshFileTree: () => void;
