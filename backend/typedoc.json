@@ -1,0 +1,7 @@
+{
+	"extends": ["../config/typedoc/base.json"],
+	"entryPoints": ["src/index.ts"],
+    "tsconfig": "tsconfig.json",
+	"out": "../docs/backend",
+    "skipErrorChecking": true,
+}

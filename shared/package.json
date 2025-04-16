@@ -1,0 +1,43 @@
+{
+	"name": "shared",
+	"version": "1.0.0",
+	"description": "Shared utilities for backend, frontend, and electron",
+	"type": "module",
+	"main": "./dist/common/index.js",
+	"exports": {
+		".": {
+			"import": "./dist/common/index.js",
+			"types": "./dist/common/index.d.ts"
+		},
+		"./server": {
+			"import": "./dist/server/index.js",
+			"types": "./dist/server/index.d.ts"
+		}
+	},
+	"typesVersions": {
+		"*": {
+			"server": [
+				"dist/server/index.d.ts"
+			],
+			"*": [
+				"dist/common/index.d.ts"
+			]
+		}
+	},
+	"files": [
+		"dist/"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"clean": "rm -rf dist *.tsbuildinfo"
+	},
+	"dependencies": {
+		"winston": "^3.17.0"
+	},
+	"devDependencies": {
+		"@types/jest": "^29.5.14",
+		"jest": "^29.7.0",
+		"ts-jest": "^29.3.2",
+		"typescript": "^5.8.3"
+	}
+}

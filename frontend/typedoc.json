@@ -1,0 +1,7 @@
+{
+	"extends": ["../config/typedoc/base.json"],
+	"entryPoints": ["src/main.tsx"],
+	"tsconfig": "tsconfig.json",
+	"out": "../docs/frontend",
+    "skipErrorChecking": true,
+}

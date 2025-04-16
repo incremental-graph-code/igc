@@ -3,3 +3,19 @@ content/.sessions/*
 content_temp
 content*
 .vscode
+**/tsconfig.tsbuildinfo
+
+# venv for python
+languages/python/*
+node_modules
+.env
+.env.packaged
+.env.production
+**/.env
+logs
+dist
+
+# docs
+# /docs/*
+# !/docs/.gitkeep
+/docs-html/

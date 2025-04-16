@@ -1,0 +1,6 @@
+{
+	"extends": ["../config/typedoc/base.json"],
+	"entryPoints": ["src/**/*.ts"],
+	"tsconfig": "tsconfig.json",
+	"out": "../docs/shared"
+}

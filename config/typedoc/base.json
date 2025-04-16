@@ -1,0 +1,9 @@
+{
+	"excludePrivate": true,
+	"excludeInternal": true,
+	"plugin": ["typedoc-plugin-markdown"],
+	// "entryPoints": ["src/index.ts"],
+	"tsconfig": "tsconfig.json",
+	"hideBreadcrumbs": true,
+	"sort": ["required-first"]
+}

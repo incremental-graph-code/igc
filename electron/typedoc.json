@@ -1,0 +1,7 @@
+{
+	"extends": ["../config/typedoc/base.json"],
+	"entryPoints": ["src/main.ts"],
+	"tsconfig": "tsconfig.json",
+	"out": "../docs/electron",
+    "skipErrorChecking": true,
+}

@@ -1,0 +1,9 @@
+{
+	"extends": "./config/tsconfig/base.json",
+	"references": [
+		{ "path": "./frontend" },
+		{ "path": "./backend" },
+		{ "path": "./electron" },
+		{ "path": "./shared" }
+	]
+}
