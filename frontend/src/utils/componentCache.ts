@@ -7,9 +7,6 @@ import {
 	RegistryComponent,
 } from "@/types/frontend";
 import React from "react";
-import BaseNode from "@/IGCItems/nodes/BaseNode";
-import BaseRelationship from "@/IGCItems/relationships/BaseRelationship";
-
 
 const COMPONENT_CACHE_KEY = "component_cache";
 const FILE_HISTORY_CACHE_KEY = "file_history_cache";
@@ -213,7 +210,7 @@ export interface CreateComponentOptions {
 	type?: "node" | "relationship" | "view";
 }
 
-export const createComponent = <P = {}>(
+export const createComponent = <P=object>(
 	component: React.FC<P>,
 	key: string,
 	displayName: string,
@@ -263,7 +260,7 @@ export interface CreateViewOptions {
 	parentComponent?: RegistryComponent;
 	abstract?: boolean;
 }
-export const createView = <T extends {} = {}>(
+export const createView = <T extends object>(
 	component: React.FC<T>,
 	key: string,
 	displayName: string,

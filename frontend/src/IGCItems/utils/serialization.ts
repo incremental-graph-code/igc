@@ -18,7 +18,7 @@ export const serializeGraphData = (
 };
 // Deserialize the graph data into a string
 export const deserializeGraphData = (nodes: Node[], edges: Edge[]): string => {
-	let data = { nodes: nodes, edges: edges };
+	const data = { nodes: nodes, edges: edges };
 	return JSON.stringify(data, null, 4); // Pretty print the JSON
 };
 

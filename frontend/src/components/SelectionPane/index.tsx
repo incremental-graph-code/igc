@@ -43,7 +43,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
         // Reset the selected item
 		if (selectedItems.length > 0) {
 			setSelectedItem(() => selectedItems[0]);
-			let optionType = selectedItems[0].item.object.type ?? "";
+			const optionType = selectedItems[0].item.object.type ?? "";
 			setSelectedOption(optionType);
 		}
 	}, [selectedItems]);
@@ -133,7 +133,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 	};
 
 	const handleItemChange = (value: string) => {
-		let item = selectedItems.find((item) => item.id === value);
+		const item = selectedItems.find((item) => item.id === value);
 		setSelectedItem(() => (item ? item : null));
 	};
 

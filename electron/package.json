@@ -9,7 +9,7 @@
 		"start": "electron ."
 	},
 	"build": {
-		"appId": "com.IncrGraph.app",
+		"appId": "com.IGC.app",
 		"productName": "Incremental Graph Code",
 		"files": [
 			"assets/**/*",
@@ -111,7 +111,7 @@
 	},
 	"author": "Max Boksem",
 	"license": "GPL-3.0",
-	"description": "IncrGraph App",
+	"description": "IGC App",
 	"bugs": {
 		"url": "https://github.com/MaxMB15/MSc-SE-Master-Project/issues"
 	},

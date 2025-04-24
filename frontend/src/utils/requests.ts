@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import axios, { AxiosRequestConfig, Method } from "axios";
-import Cookies from "node_modules/@types/js-cookie";
+import Cookies from "js-cookie";
 
 const apiURL = import.meta.env.VITE_API_URL;
 

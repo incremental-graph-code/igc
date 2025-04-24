@@ -64,7 +64,7 @@ export const runAllAnalysis = async () => {
 
 	// Get all analysis data for all nodes
 	const nodeAnalysisData: { [nodeId: string]: CodeAnalysisResponse } = {};
-	for (let node of useStore.getState().getNodes(selectedFile) as Node<
+	for (const node of useStore.getState().getNodes(selectedFile) as Node<
 		IGCCodeNodeData<IGCNodeData>
 	>[]) {
 		if (isCodeNode(node)) {

@@ -4,7 +4,7 @@
 
 # Backend
 
-This directory hosts the Node.js and TypeScript backend application for IncrGraph. It includes the API and server-side logic necessary for the application.
+This directory hosts the Node.js and TypeScript backend application for IGC. It includes the API and server-side logic necessary for the application.
 
 ## Prerequisites
 

@@ -1,91 +1,102 @@
 import _ from "lodash";
 
-export const applyFilter = (data: any, filters: string[]): any => {
-	const clonedData = _.cloneDeep(data);
-
-	const parsedFilters = filters.map((filter) => filter.split("."));
-
-	const removeKeys = (obj: any, keys: string[][]) => {
-		if (!keys.length || !obj) return;
-
-		const keyMap = keys.reduce((map, key) => {
-			if (!map[key[0]]) map[key[0]] = [];
-			if (key.length > 1) map[key[0]].push(key.slice(1));
-			return map;
-		}, {} as Record<string, string[][]>);
-
-		Object.keys(keyMap).forEach((key) => {
-			if (Array.isArray(obj[key])) {
-				obj[key].forEach((item: any) => removeKeys(item, keyMap[key]));
-			} else if (keyMap[key].length) {
-				removeKeys(obj[key], keyMap[key]);
-			} else {
-				delete obj[key];
-			}
-		});
-	};
-
-	removeKeys(clonedData, parsedFilters);
-
-	return clonedData;
+/**
+ * A dictionary object with a required 'id' property and arbitrary other keys.
+ */
+export type DictWithId = {
+    id: string;
+    [key: string]: string | number | boolean | null | DictWithId | DictWithId[] | undefined;
 };
 
-export const mergeChanges = (original: any, filtered: any): any => {
-	// Deep clone the original data to avoid mutating it
-	const clonedOriginal = _.cloneDeep(original);
+/**
+ * Recursively omits specified keys from an object or array of objects.
+ * @param data The input object or array of objects.
+ * @param filters Array of dot-separated key paths to remove.
+ * @returns A deep-cloned object/array with specified keys removed.
+ */
+export const applyFilter = (data: DictWithId | DictWithId[], filters: string[]): DictWithId | DictWithId[] => {
+    const clonedData = _.cloneDeep(data);
+    const parsedFilters = filters.map((filter) => filter.split("."));
 
-	const mergeKeys = (obj: any, updatedObj: any) => {
-		if (!obj || !updatedObj) return;
+    const removeKeys = (obj: DictWithId | DictWithId[] | undefined, keys: string[][]) => {
+        if (!keys.length || !obj) return;
 
-		for (const key of Object.keys(updatedObj)) {
-			// If the value is an array, handle it differently
-			if (Array.isArray(updatedObj[key])) {
-				if (!Array.isArray(obj[key])) {
-					obj[key] = [];
-				}
-				mergeArrays(obj[key], updatedObj[key]);
-			} else if (
-				typeof updatedObj[key] === "object" &&
-				updatedObj[key] !== null
-			) {
-				// If the value is an object, recurse into the object
-				if (!obj[key]) {
-					obj[key] = {};
-				}
-				mergeKeys(obj[key], updatedObj[key]);
-			} else {
-				// Otherwise, override the value
-				obj[key] = updatedObj[key];
-			}
-		}
-	};
+        const keyMap = keys.reduce((map, key) => {
+            if (!map[key[0]]) map[key[0]] = [];
+            if (key.length > 1) map[key[0]].push(key.slice(1));
+            return map;
+        }, {} as Record<string, string[][]>);
 
-	const mergeArrays = (originalArray: any[], filteredArray: any[]) => {
-		const filteredMap = new Map(
-			filteredArray.map((item) => [item.id, item]),
-		);
+        Object.keys(keyMap).forEach((key) => {
+            if (Array.isArray((obj as DictWithId)[key])) {
+                ((obj as DictWithId)[key] as DictWithId[]).forEach((item) => removeKeys(item, keyMap[key]));
+            } else if (keyMap[key].length) {
+                removeKeys((obj as DictWithId)[key] as DictWithId, keyMap[key]);
+            } else {
+                delete (obj as DictWithId)[key];
+            }
+        });
+    };
 
-		// Merge existing items
-		for (let i = 0; i < originalArray.length; i++) {
-			const originalItem = originalArray[i];
-			if (filteredMap.has(originalItem.id)) {
-				const filteredItem = filteredMap.get(originalItem.id);
-				mergeKeys(originalItem, filteredItem);
-				filteredMap.delete(originalItem.id);
-			} else {
-				// If the original item id is not in the filtered map, it should be removed
-				originalArray.splice(i, 1);
-				i--;
-			}
-		}
+    removeKeys(clonedData, parsedFilters);
 
-		// Add new items from filtered array
-		for (const [_, item] of filteredMap) {
-			originalArray.push(item);
-		}
-	};
+    return clonedData;
+};
 
-	mergeKeys(clonedOriginal, filtered);
+/**
+ * Deeply merges two objects/arrays by 'id', updating values and structure.
+ * @param original The original object to merge into.
+ * @param filtered The object with updated values.
+ * @returns A new object with merged values.
+ */
+export const mergeChanges = (original: DictWithId, filtered: DictWithId): DictWithId => {
+    const clonedOriginal = _.cloneDeep(original);
 
-	return clonedOriginal;
+    const mergeKeys = (obj: DictWithId, updatedObj: DictWithId) => {
+        if (!obj || !updatedObj) return;
+
+        for (const key of Object.keys(updatedObj)) {
+            const updatedValue = updatedObj[key];
+            if (Array.isArray(updatedValue)) {
+                if (!Array.isArray(obj[key])) {
+                    obj[key] = [];
+                }
+                mergeArrays(obj[key] as DictWithId[], updatedValue as DictWithId[]);
+            } else if (typeof updatedValue === "object" && updatedValue !== null) {
+                if (!obj[key]) {
+                    obj[key] = {};
+                }
+                mergeKeys(obj[key] as DictWithId, updatedValue as DictWithId);
+            } else {
+                obj[key] = updatedValue;
+            }
+        }
+    };
+
+    const mergeArrays = (originalArray: DictWithId[], filteredArray: DictWithId[]) => {
+        const filteredMap = new Map(filteredArray.map((item) => [item.id, item]));
+
+        // Merge existing items
+        for (let i = 0; i < originalArray.length; i++) {
+            const originalItem = originalArray[i];
+            if (filteredMap.has(originalItem.id)) {
+                const filteredItem = filteredMap.get(originalItem.id)!;
+                mergeKeys(originalItem, filteredItem);
+                filteredMap.delete(originalItem.id);
+            } else {
+                // Remove items not present in filtered array
+                originalArray.splice(i, 1);
+                i--;
+            }
+        }
+
+        // Add new items from filtered array
+        for (const [, item] of filteredMap) {
+            originalArray.push(item);
+        }
+    };
+
+    mergeKeys(clonedOriginal, filtered);
+
+    return clonedOriginal;
 };

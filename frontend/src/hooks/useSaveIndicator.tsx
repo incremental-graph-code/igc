@@ -27,14 +27,14 @@ export const useSaveIndicator = (
 				style={{
 					backgroundColor:
 						status === "saved"
-							? "green"
+							? COLOR_MAP["saved"]
 							: status === "error"
-							? "red"
-							: "orange",
+							? COLOR_MAP["error"]
+							: COLOR_MAP["unsaved"],
 				}}
 			></span>
 		);
-	}, [status]);
+	}, [status, key]);
 
 	useIndicator({
 		key: key,

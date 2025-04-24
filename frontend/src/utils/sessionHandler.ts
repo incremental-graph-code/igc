@@ -144,7 +144,7 @@ export const createExecutionData = async (
 		const nodeId = executionPath[j];
 		for (let i = 0; i < nodes.length; i++) {
 			// Check which type of node
-			let node: Node = nodes[i];
+			const node: Node = nodes[i];
 			if (node.id === nodeId) {
 				// Code node
 				if (isCodeNode(node)) {

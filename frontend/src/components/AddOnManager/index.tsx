@@ -146,7 +146,7 @@ const AddOnManager: React.FC<AddOnManagerProps> = ({ onClose }) => {
 					<OpenDirectoryButton
 						onClick={() =>
 							handleImportAddon(
-								"/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/IncrGraph/frontend/src/temp_import",
+								"/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/frontend/src/temp_import",
 							)
 						}
 						className="icon-button"

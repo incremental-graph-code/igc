@@ -8,10 +8,10 @@ import { Node } from "reactflow";
 import { getIncomingNodes, isComponentOfType } from "@/IGCItems/utils/utils";
 
 
-export type IGCDocumentationData<T = {}> = T & {
+export type IGCDocumentationData<T=object> = T & {
 	documentation: string;
 };
-export type IGCDocumentationNodeProps<T = {}> = IGCNodeProps<IGCDocumentationData & T>;
+export type IGCDocumentationNodeProps<T=object> = IGCNodeProps<IGCDocumentationData & T>;
 
 
 const RawDocumentationNode: IGCDocumentationNodeProps = (props) => (
@@ -59,7 +59,7 @@ export const showRelevantDocumentation = (node: Node | null): void => {
         return;
     }
     useStore.getState().setNodes(curFile, (prevNodes) => {
-        let nodesToShow: string[] = [];
+        const nodesToShow: string[] = [];
         if (isDocumentationNode(node)) {
             nodesToShow.push(node.id);
         } else {

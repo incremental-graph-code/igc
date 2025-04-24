@@ -14,11 +14,11 @@ type CodeData = {
 	new_definitions?: Definitions;
 };
 
-export type IGCCodeNodeData<T = {}> = T & {
+export type IGCCodeNodeData<T=object> = T & {
 	codeData: CodeData;
 };
 
-export type IGCCodeNodeProps<T = {}> = IGCNodeProps<IGCCodeNodeData & T>;
+export type IGCCodeNodeProps<T=object> = IGCNodeProps<IGCCodeNodeData & T>;
 
 export const RawCodeNode: IGCCodeNodeProps = (props) => {
     // Set initial codeData if not yet set

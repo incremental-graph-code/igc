@@ -1,4 +1,4 @@
-export interface Empty {}
+export type Empty = object;
 
 export interface TokenResponse {
 	access: string;

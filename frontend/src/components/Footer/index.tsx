@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
 					style={{ height: STYLES.footerHeight }}
 				>
 					<a
-						href="https://github.com/MaxMB15/MSc-SE-Master-Project/tree/main/IncrGraph"
+						href="https://github.com/incremental-graph-code/igc"
 						target="_blank"
 						rel="noopener noreferrer"
 						style={{ paddingRight: "50px", left: "50%" }}

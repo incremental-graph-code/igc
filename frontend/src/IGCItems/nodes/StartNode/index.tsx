@@ -13,7 +13,7 @@ const RawStartNode: IGCNodeProps = () => {
 		event.stopPropagation(); // Prevent the default single click behavior
 		// Deselect All Nodes and Edges
 		setNodes((nodes) => {
-			let newNodes = nodes.map((node) => {
+			const newNodes = nodes.map((node) => {
 				node.selected = false;
 				return node;
 			});
@@ -21,7 +21,7 @@ const RawStartNode: IGCNodeProps = () => {
 		});
 
 		setEdges((edges) => {
-			let newEdges = edges.map((edge) => {
+			const newEdges = edges.map((edge) => {
 				edge.selected = false;
 				return edge;
 			});

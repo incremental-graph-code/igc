@@ -14,7 +14,7 @@
 	},
 	"author": "Max Boksem",
 	"license": "GPL-3.0",
-	"description": "Frontend of IncrGraph",
+	"description": "Frontend of IGC",
 	"dependencies": {
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.0",

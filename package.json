@@ -18,7 +18,11 @@
 		"dev:backend": "cd backend && npm run dev",
 		"dist": "cd electron && npm run dist",
 		"start": "cd electron && npm run start",
-		"lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+		"lint": "npm run lint:frontend && npm run lint:backend && npm run lint:electron && npm run lint:shared",
+		"lint:frontend": "eslint frontend",
+        "lint:backend": "eslint backend",
+		"lint:electron": "eslint electron",
+		"lint:shared": "eslint shared",
 		"format": "prettier . --write",
 		"test": "npm run test:frontend && npm run test:backend && npm run test:electron && npm run test:shared",
 		"test:frontend": "cd frontend && jest",
@@ -40,7 +44,7 @@
 	},
 	"author": "Max Boksem",
 	"license": "GPL-3.0",
-	"description": "Root of IncrGraph",
+	"description": "Root of IGC",
 	"bugs": {
 		"url": "https://github.com/incremental-graph-code/igc/issues"
 	},

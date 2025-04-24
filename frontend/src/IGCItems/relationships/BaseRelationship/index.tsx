@@ -19,14 +19,14 @@ import { createComponent } from "@/utils/componentCache";
 // 	};
 // 	selected?: boolean;
 // }
-export type IGCRelationshipData<T = {}> = T & {
+export type IGCRelationshipData<T=object> = T & {
 	backgroundColor?: string;
 	offset?: number;
 	label?: string;
 	labelRadius?: number;
 };
 
-export type IGCRelationshipProps<T = {}> = React.FC<
+export type IGCRelationshipProps<T=object> = React.FC<
 	EdgeProps<IGCRelationshipData<T>>
 >;
 

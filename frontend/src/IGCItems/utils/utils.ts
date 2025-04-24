@@ -368,7 +368,7 @@ export const updateExecutionPath = (
 	executionPath: string[],
 ): Edge[] => {
     executionPath = ["start", ...executionPath];
-    let filteredEdges: Edge[] = [];
+    const filteredEdges: Edge[] = [];
 	// Add execution relationship edges
 	for (let i = 0; i < executionPath.length - 1; i++) {
 		const source = executionPath[i];

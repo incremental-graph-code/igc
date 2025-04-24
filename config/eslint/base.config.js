@@ -15,9 +15,10 @@ export default [
 		files: ["**/*.ts", "**/*.tsx"],
 		rules: {
 			// Optional overrides
+            "@typescript-eslint/no-explicit-any": "off",
 		},
 	},
 	{
-		ignores: ["dist/", "node_modules/"],
+		ignores: ["dist/", "node_modules/", "docs/"],
 	},
 ];

@@ -1,5 +1,5 @@
 // This file is for creating requests to the backend API
-import { sendAxiosRequest, useAxiosRequest, UseAxiosRequestOptions } from "@/utils/requests";
+import { sendAxiosRequest, UseAxiosRequestOptions } from "@/utils/requests";
 import {
 	CodeAnalysisRequest,
 	CodeAnalysisResponse,

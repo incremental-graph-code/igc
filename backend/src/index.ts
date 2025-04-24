@@ -3,9 +3,9 @@ import cors from "cors";
 import fileExplorerRoutes from "./routes/file-explorer";
 import codeHandlerRoutes from "./routes/code-handler";
 import requestLogger from "./middleware/requestLogger";
-import * as path from "path";
-import * as dotenv from "dotenv";
-import * as dotenvExpand from "dotenv-expand";
+import path from "path";
+import dotenv from "dotenv";
+import dotenvExpand from "dotenv-expand";
 
 // Read from .env file
 dotenvExpand.expand(

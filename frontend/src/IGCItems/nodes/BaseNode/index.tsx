@@ -18,14 +18,14 @@ import { createComponent } from "@/utils/componentCache";
 const connectionNodeIdSelector = (state: ReactFlowState) =>
 	state.connectionNodeId;
 
-export type IGCNodeData<T = {}> = T & {
+export type IGCNodeData<T=object> = T & {
 	label: string;
 	backgroundColor?: string;
 	children?: React.ReactNode;
 	handleRun?: () => void;
 };
 
-export type IGCNodeProps<T = {}> = React.FC<NodeProps<IGCNodeData<T>>>;
+export type IGCNodeProps<T=object> = React.FC<NodeProps<IGCNodeData<T>>>;
 
 const RawBaseNode: IGCNodeProps = ({ id, data, selected }) => {
 	const { setNodes } = useStore();

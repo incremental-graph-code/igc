@@ -1,6 +1,7 @@
 {
 	"extends": "../config/tsconfig/browser.json",
 	"compilerOptions": {
+        "target": "ES2024",
 		"outDir": "dist",
 		"composite": true,
 		"baseUrl": ".",

@@ -106,7 +106,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 
 	// If an edge is changed, check to see if there are any selection changes
 	useEffect(() => {
-		let newSelectedEdges: Edge[] = edges.filter((edge) => edge.selected);
+		const newSelectedEdges: Edge[] = edges.filter((edge) => edge.selected);
 		setSelectedEdges(newSelectedEdges);
 	}, [edges]);
 
@@ -204,14 +204,14 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 		setNodes(selectedFile, (nodes) => {
 			const newNode: Node<IGCNodeData> = createBaseNode(nodes);
 
-			let newNodes = nodes.map((node) => {
+			const newNodes = nodes.map((node) => {
 				node.selected = false;
 				return node;
 			});
 			return [...newNodes, newNode];
 		});
 		setEdges(selectedFile, (edges) => {
-			let newEdges = edges.map((edge) => {
+			const newEdges = edges.map((edge) => {
 				edge.selected = false;
 				return edge;
 			});
@@ -440,7 +440,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 				),
 			);
 			setNodes(selectedFile, (nodes) => {
-				let newNodes = nodes.map((node) => {
+				const newNodes = nodes.map((node) => {
 					node.selected = false;
 					return node;
 				});

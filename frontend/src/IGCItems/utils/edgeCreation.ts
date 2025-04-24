@@ -25,7 +25,7 @@ export const createDependencyGraph = () => {
 	const newDefinitionsMap: { [key: string]: string[] } = {};
 
 	// Go through every node and get the dependencies and new_definitions
-	for (let node of getNodes(selectedFile)) {
+	for (const node of getNodes(selectedFile)) {
 		if (!isCodeNode(node)) {
 			continue;
 		}
@@ -62,10 +62,10 @@ export const createDependencyGraph = () => {
 
 	// Go through every dependency and create an edge to a definition
 	const edgeMap: { [source: string]: { [target: string]: string[] } } = {};
-	for (let dependency in dependencyMap) {
+	for (const dependency in dependencyMap) {
 		if (newDefinitionsMap[dependency] !== undefined) {
-			for (let source of dependencyMap[dependency]) {
-				for (let target of newDefinitionsMap[dependency]) {
+			for (const source of dependencyMap[dependency]) {
+				for (const target of newDefinitionsMap[dependency]) {
 					if (edgeMap[source] === undefined) {
 						edgeMap[source] = {};
 					}
@@ -79,8 +79,8 @@ export const createDependencyGraph = () => {
 	}
 
 	// Convert the edgeMap to a graph
-	for (let source in edgeMap) {
-		for (let target in edgeMap[source]) {
+	for (const source in edgeMap) {
+		for (const target in edgeMap[source]) {
 			graph.push({
 				source,
 				target,
@@ -91,7 +91,7 @@ export const createDependencyGraph = () => {
 
 	// Create the edges and push them to reactflow
 	const newEdges: Edge[] = [];
-	for (let edge of graph) {
+	for (const edge of graph) {
 		newEdges.push({
 			id: getEdgeId(
 				edge.source,
@@ -119,7 +119,7 @@ export const createDependencyGraph = () => {
 			),
 			...newEdges,
 		];
-		for (let node of getNodes(selectedFile)) {
+		for (const node of getNodes(selectedFile)) {
 			edges = detectRelationships(node, edges);
 		}
 		return edges;
@@ -173,7 +173,7 @@ const detectOverrideRelationships = (
 		);
 
 		// Get the class nodes that are attached to the class nodes from above through interface relationships
-		for (let cn of classNodes) {
+		for (const cn of classNodes) {
 			const classNodes2 = getOutgoingNodes(
 				cn.id,
 				useStore.getState().getNodes(selectedFile),
@@ -193,7 +193,7 @@ const detectOverrideRelationships = (
 			);
 
 			// Get the method nodes that are attached to the class nodes from above through method relationships
-			for (let cn2 of classNodes2) {
+			for (const cn2 of classNodes2) {
 				const methodNodes = getIncomingNodes(
 					cn2.id,
 					useStore.getState().getNodes(selectedFile),
@@ -207,7 +207,7 @@ const detectOverrideRelationships = (
 				);
 
 				// Check if the method node has the same name as the method node from the first step
-				for (let mn of methodNodes) {
+				for (const mn of methodNodes) {
 					if (
 						mn.data !== undefined &&
                         isCodeNode(mn) &&
@@ -217,8 +217,8 @@ const detectOverrideRelationships = (
 							mn.data.codeData.new_definitions.functions
 								.filter((f: string) => f.includes("."))
 								.map((f: string) => f.split(".")[1]);
-						for (let mdef of methodDefinitions) {
-							for (let mdef2 of methodDefinitions2) {
+						for (const mdef of methodDefinitions) {
+							for (const mdef2 of methodDefinitions2) {
 								if (mdef === mdef2) {
 									overrideRelationships.push({
 										id: getEdgeId(node.id, mn.id, edges),
@@ -277,7 +277,7 @@ const detectInheritanceRelationships = (
 						: edgeType === "DependencyRelationship";
 				},
 			);
-			for (let cn of classNodes) {
+			for (const cn of classNodes) {
 				if (
 					cn.data !== undefined &&
 					cn.data.codeData.new_definitions !== undefined
@@ -286,8 +286,8 @@ const detectInheritanceRelationships = (
 					if (!classDefinitions) {
 						continue;
 					}
-					for (let cdep of classDependencies) {
-						for (let cdef of classDefinitions) {
+					for (const cdep of classDependencies) {
+						for (const cdef of classDefinitions) {
 							if (cdep === cdef) {
 								inheritanceEdges.push({
 									id: getEdgeId(node.id, cn.id, edges),

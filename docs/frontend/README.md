@@ -4,7 +4,7 @@
 
 # Frontend
 
-This directory contains the frontend part of the IncrGraph application, built using React, TypeScript, and Vite. The setup is designed to offer a reactive and efficient development environment.
+This directory contains the frontend part of the IGC application, built using React, TypeScript, and Vite. The setup is designed to offer a reactive and efficient development environment.
 
 ## Prerequisites
 

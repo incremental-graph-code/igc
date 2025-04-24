@@ -39,11 +39,11 @@ This script ensures that both parts are compiled and ready for deployment in a p
 
 ## Contributing
 
-Contributions to IncrGraph are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to make contributions.
+Contributions to IGC are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to make contributions.
 
 ## License
 
-IncrGraph is released under the GNU General Public License v3.0 (GPL-3.0). For more details, see the [LICENSE](COPYING) file included in this repository.
+IGC is released under the GNU General Public License v3.0 (GPL-3.0). For more details, see the [LICENSE](COPYING) file included in this repository.
 
 ## Support and Documentation
 
