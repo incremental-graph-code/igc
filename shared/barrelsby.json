@@ -1,0 +1,7 @@
+{
+	"directory": ["src/common", "src/server"],
+	"delete": true,
+	"exclude": ["\\.spec\\.ts$", "\\.test\\.ts$"],
+	"singleQuo": true,
+	"structure": "flat"
+}

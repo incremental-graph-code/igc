@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Draggable from "react-draggable";
 import styles from "./Popup.module.css";
 
@@ -9,23 +9,21 @@ interface PopupProps {
 }
 
 const Popup: React.FC<PopupProps> = ({ component, title, onClose }) => {
-	// Close popup on 'Esc' key press
+	const nodeRef = useRef<HTMLDivElement>(null);
+
+	// Close on Escape
 	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				onClose();
-			}
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
 		};
 		document.addEventListener("keydown", handleKeyDown);
-		return () => {
-			document.removeEventListener("keydown", handleKeyDown);
-		};
+		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [onClose]);
 
 	return (
 		<div className={styles.popupOverlay}>
-			<Draggable handle={`.${styles.popupHeader}`}>
-				<div className={styles.popupContainer}>
+			<Draggable handle={`.${styles.popupHeader}`} nodeRef={nodeRef}>
+				<div ref={nodeRef} className={styles.popupContainer}>
 					<div className={styles.popupHeader}>
 						<h2>{title}</h2>
 						<button className={styles.closeBtn} onClick={onClose}>

@@ -53,11 +53,9 @@ import { showRelevantDocumentation } from "@/IGCItems/nodes/DocumentationNode";
 import { isGraphNode } from "@/IGCItems/nodes/GraphNode";
 import { fileExists } from "@/requests";
 
-import { toPng, toSvg } from "html-to-image";
+import { toSvg } from "html-to-image";
 
-interface GraphEditorProps {}
-
-const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
+const GraphEditor: React.FC = () => {
 	// VARIABLES
 	// Store variables
 	const fileContent = useStore((state) => state.fileContent);
@@ -73,8 +71,8 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 	const nodeTypes = useStore((state) => state.nodeTypes);
 	const relationshipTypes = useStore((state) => state.relationshipTypes);
 
-	const nodes = selectedFile === null ? [] : getNodes(selectedFile);
-	const edges = selectedFile === null ? [] : getEdges(selectedFile);
+	const nodes = useMemo(() => selectedFile === null ? [] : getNodes(selectedFile), [selectedFile, getNodes]);
+	const edges = useMemo(() => selectedFile === null ? [] : getEdges(selectedFile), [selectedFile, getEdges]);
 
 	// STATE
 	const [showGraph, setShowGraph] = useState(false); // If the graph should show up or not
@@ -125,7 +123,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 				});
 			}
 		}
-	}, [selectedNodes]);
+	}, [selectedNodes, setNodes]);
 
 	// When new selections are being made, update the selected items
 	useEffect(() => {
@@ -148,7 +146,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 			});
 			setSelectedItems(() => items);
 		}
-	}, [selectedNodes, selectedEdges]);
+	}, [selectedNodes, selectedEdges, setSelectedItems]);
 
 	useEffect(() => {
 		if (selectedItem !== null && selectedItem.item.type === "node") {
@@ -164,7 +162,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 
 	const getEdgeTypes = useMemo(() => {
 		return convertMapToTrueEdgeTypes(relationshipTypes);
-	}, [nodeTypes]);
+	}, [relationshipTypes]);
 
 	if (selectedFile === null) {
 		return (
@@ -219,14 +217,13 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 		});
 	};
 
-    const exportGraphToSVG = () => {
-        const downloadImage = (
+	const exportGraphToSVG = () => {
+		const downloadImage = (
 			dataUrl: string,
 			extension: string,
 			name?: string,
 		) => {
-
-			const fileName = `${name ? name : 'IGC_diagram'}.${extension}`;
+			const fileName = `${name ? name : "IGC_diagram"}.${extension}`;
 
 			const a = document.createElement("a");
 			a.setAttribute("download", fileName);
@@ -234,144 +231,165 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 			a.click();
 		};
 
-        const reactFlowElements = document.querySelector(".react-flow__viewport") as HTMLElement;
-        if (reactFlowInstance.current !== null && reactFlowElements !== null) {
-            const nodesBounds = getRectOfNodes(nodes);
-            const imageWidth = nodesBounds.width + 200;
-            const imageHeight = nodesBounds.height + 200;
-            const transform = getTransformForBounds(nodesBounds, imageWidth, imageHeight, 0.5, 2);
-            
-            return toSvg(reactFlowElements, {
-                filter: (node) => 
-                    !(node?.classList?.contains("react-flow__minimap") || node?.classList?.contains("react-flow__controls")),
-                width: imageWidth,
-                height: imageHeight,
-                style: {
-                    width: String(imageWidth),
-                    height: String(imageHeight),
-                    transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
-                },
-            }).then(async (svgContent: any) => {
-                // Extract SVG content
-                const decodedSVG = decodeURIComponent(svgContent.replace("data:image/svg+xml;charset=utf-8,", "").trim());
-                
-                // Embed fonts, styles, and images
-                const embeddedSVG = await embedAssets(decodedSVG);
-                
-                // Convert SVG to Blob and download
-                const blob = new Blob([embeddedSVG], { type: "image/svg+xml" });
-                const url = URL.createObjectURL(blob);
-                downloadImage(url, "svg", `${selectedFile}_IGC_diagram`);
-                URL.revokeObjectURL(url);
-            });
-        }
-    };
-    
-    async function embedAssets(svgContent: string) {
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svgContent, "image/svg+xml");
-        
-        // Embed styles
-        const styles = Array.from(document.styleSheets)
-            .map(sheet => {
-                try {
-                    return Array.from(sheet.cssRules)
-                        .map(rule => rule.cssText)
-                        .join("\n");
-                } catch (e) {
-                    return "";
-                }
-            })
-            .join("\n");
-        
-        const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-        styleElement.textContent = styles;
-        svgDoc.documentElement.insertBefore(styleElement, svgDoc.documentElement.firstChild);
-        
-        // Embed images (convert to base64)
-        const images = svgDoc.querySelectorAll("image");
-        for (const img of images) {
-            const href = img.getAttribute("href") || img.getAttribute("xlink:href");
-            if (href && !href.startsWith("data:")) {
-                const dataUrl = await convertImageToBase64(href);
-                img.setAttribute("href", dataUrl);
-            }
-        }
-        
-        return new XMLSerializer().serializeToString(svgDoc);
-    }
-    function convertImageToBase64(url: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.onload = () => {
-                const canvas = document.createElement("canvas");
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext("2d");
-                ctx?.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL("image/png"));
-            };
-            img.onerror = reject;
-            img.src = url;
-        });
-    }
+		const reactFlowElements = document.querySelector(
+			".react-flow__viewport",
+		) as HTMLElement;
+		if (reactFlowInstance.current !== null && reactFlowElements !== null) {
+			const nodesBounds = getRectOfNodes(nodes);
+			const imageWidth = nodesBounds.width + 200;
+			const imageHeight = nodesBounds.height + 200;
+			const transform = getTransformForBounds(
+				nodesBounds,
+				imageWidth,
+				imageHeight,
+				0.5,
+				2,
+			);
 
-	
-	const exportGraphToPNG = (dpi: number = 10) => {
-        // Get the bounds of the nodes to determine the size of the image
-        const nodesBounds = getRectOfNodes(nodes);
-        const imageWidth = nodesBounds.width + 200;
-        const imageHeight = nodesBounds.height + 200;
-        
-        // Calculate the transform for proper alignment and scaling
-        const transform = getTransformForBounds(
-          nodesBounds,
-          imageWidth,
-          imageHeight,
-          0.5,
-          2,
-        );
-      
-        // Select the element you wish to capture
-        const reactFlowElement = document.querySelector('.react-flow__viewport') as HTMLElement;
-        if (!reactFlowElement) {
-          console.error('Element .react-flow__viewport not found.');
-          return;
-        }
-      
-        return toPng(reactFlowElement, {
-          // Filter out any unwanted nodes
-          filter: (node) =>
-            !(
-              node?.classList?.contains("react-flow__minimap") ||
-              node?.classList?.contains("react-flow__controls")
-            ),
-          width: imageWidth,
-          height: imageHeight,
-          // The style dimensions are used to layout the element correctly before rendering
-          style: {
-            width: `${imageWidth}px`,
-            height: `${imageHeight}px`,
-            transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
-          },
-          // Set the pixelRatio to the DPI parameter for high resolution
-          pixelRatio: dpi,
-        })
-          .then((dataUrl: string) => {
-            // Create an anchor element and trigger the download
-            const fileName = 'high_dpi_diagram.png';
-            const a = document.createElement('a');
-            a.setAttribute('download', fileName);
-            a.setAttribute('href', dataUrl);
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          })
-          .catch((error: any) => {
-            console.error('Error exporting PNG:', error);
-          });
-      };
+			return toSvg(reactFlowElements, {
+				filter: (node) =>
+					!(
+						node?.classList?.contains("react-flow__minimap") ||
+						node?.classList?.contains("react-flow__controls")
+					),
+				width: imageWidth,
+				height: imageHeight,
+				style: {
+					width: String(imageWidth),
+					height: String(imageHeight),
+					transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+				},
+			}).then(async (svgContent: any) => {
+				// Extract SVG content
+				const decodedSVG = decodeURIComponent(
+					svgContent
+						.replace("data:image/svg+xml;charset=utf-8,", "")
+						.trim(),
+				);
+
+				// Embed fonts, styles, and images
+				const embeddedSVG = await embedAssets(decodedSVG);
+
+				// Convert SVG to Blob and download
+				const blob = new Blob([embeddedSVG], { type: "image/svg+xml" });
+				const url = URL.createObjectURL(blob);
+				downloadImage(url, "svg", `${selectedFile}_IGC_diagram`);
+				URL.revokeObjectURL(url);
+			});
+		}
+	};
+
+	async function embedAssets(svgContent: string) {
+		const parser = new DOMParser();
+		const svgDoc = parser.parseFromString(svgContent, "image/svg+xml");
+
+		// Embed styles
+		const styles = Array.from(document.styleSheets)
+			.map((sheet) => {
+				try {
+					return Array.from(sheet.cssRules)
+						.map((rule) => rule.cssText)
+						.join("\n");
+				} catch {
+					return "";
+				}
+			})
+			.join("\n");
+
+		const styleElement = document.createElementNS(
+			"http://www.w3.org/2000/svg",
+			"style",
+		);
+		styleElement.textContent = styles;
+		svgDoc.documentElement.insertBefore(
+			styleElement,
+			svgDoc.documentElement.firstChild,
+		);
+
+		// Embed images (convert to base64)
+		const images = svgDoc.querySelectorAll("image");
+		for (const img of images) {
+			const href =
+				img.getAttribute("href") || img.getAttribute("xlink:href");
+			if (href && !href.startsWith("data:")) {
+				const dataUrl = await convertImageToBase64(href);
+				img.setAttribute("href", dataUrl);
+			}
+		}
+
+		return new XMLSerializer().serializeToString(svgDoc);
+	}
+	function convertImageToBase64(url: string): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			img.crossOrigin = "Anonymous";
+			img.onload = () => {
+				const canvas = document.createElement("canvas");
+				canvas.width = img.width;
+				canvas.height = img.height;
+				const ctx = canvas.getContext("2d");
+				ctx?.drawImage(img, 0, 0);
+				resolve(canvas.toDataURL("image/png"));
+			};
+			img.onerror = reject;
+			img.src = url;
+		});
+	}
+
+	// const exportGraphToPNG = (dpi: number = 10) => {
+	//     // Get the bounds of the nodes to determine the size of the image
+	//     const nodesBounds = getRectOfNodes(nodes);
+	//     const imageWidth = nodesBounds.width + 200;
+	//     const imageHeight = nodesBounds.height + 200;
+
+	//     // Calculate the transform for proper alignment and scaling
+	//     const transform = getTransformForBounds(
+	//       nodesBounds,
+	//       imageWidth,
+	//       imageHeight,
+	//       0.5,
+	//       2,
+	//     );
+
+	//     // Select the element you wish to capture
+	//     const reactFlowElement = document.querySelector('.react-flow__viewport') as HTMLElement;
+	//     if (!reactFlowElement) {
+	//       console.error('Element .react-flow__viewport not found.');
+	//       return;
+	//     }
+
+	//     return toPng(reactFlowElement, {
+	//       // Filter out any unwanted nodes
+	//       filter: (node) =>
+	//         !(
+	//           node?.classList?.contains("react-flow__minimap") ||
+	//           node?.classList?.contains("react-flow__controls")
+	//         ),
+	//       width: imageWidth,
+	//       height: imageHeight,
+	//       // The style dimensions are used to layout the element correctly before rendering
+	//       style: {
+	//         width: `${imageWidth}px`,
+	//         height: `${imageHeight}px`,
+	//         transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+	//       },
+	//       // Set the pixelRatio to the DPI parameter for high resolution
+	//       pixelRatio: dpi,
+	//     })
+	//       .then((dataUrl: string) => {
+	//         // Create an anchor element and trigger the download
+	//         const fileName = 'high_dpi_diagram.png';
+	//         const a = document.createElement('a');
+	//         a.setAttribute('download', fileName);
+	//         a.setAttribute('href', dataUrl);
+	//         document.body.appendChild(a);
+	//         a.click();
+	//         document.body.removeChild(a);
+	//       })
+	//       .catch((error: any) => {
+	//         console.error('Error exporting PNG:', error);
+	//       });
+	//   };
 
 	// Edge Functions
 	const onEdgesDelete = async (edges: Edge[]) => {
@@ -562,7 +580,7 @@ const GraphEditor: React.FC<GraphEditorProps> = ({}) => {
 								reactFlowInstance.current = instance;
 								handlePanToStartNode();
 							}}
-                            proOptions={{hideAttribution: true}}
+							proOptions={{ hideAttribution: true }}
 						>
 							<MiniMap className="react-flow__minimap" />
 							<Controls

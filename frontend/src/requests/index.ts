@@ -55,7 +55,7 @@ export const fileExists = async (filePath: string): Promise<boolean> => {
 			{ exists: boolean }
 		>(options);
 		return fileExists.exists;
-	} catch (error) {
+	} catch {
 		return false;
 	}
 };

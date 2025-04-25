@@ -6,15 +6,16 @@ import {
 	FileNode,
 	Cache,
 	CacheEntry,
-	createCustomLogger,
 	ModuleConfigurationData,
 	IGCFileSessionData,
 	SessionConfig,
 	IGCSession,
 	IGCCodeNodeExecution,
 	SessionDataDeleteExecutionRequest,
-    FileNodeType,
+	FileNodeType,
 } from "shared";
+import { createCustomLogger } from "shared/server";
+import { __dirname, getSubDirectories } from "../utils/file";
 
 const router = Router();
 
@@ -319,7 +320,7 @@ router.post("/new-directory", async (req: Request, res: Response) => {
 // const componentTypesToSearchFor: string[] = ["IGCNodeProps"];
 
 // Cache file path
-const CACHE_FILE = path.join(__dirname, "../../cache.json");
+const CACHE_FILE = path.join(__dirname, "../cache.json");
 const IGC_MODULE_CONFIG_FILE = "igc.module.json";
 
 // Function to read the cache
@@ -393,19 +394,21 @@ const writeCache = (cacheData: Cache): void => {
 router.post("/module", async (req: Request, res: Response) => {
 	const directoryPath = req.body.directory as string;
 	if (!directoryPath) {
-		return res.status(400).json({ error: "Directory path is required" });
+		res.status(400).json({ error: "Directory path is required" });
+		return;
 	}
 
-	let cache = await readCache();
+	const cache = await readCache();
 
 	// Check if the directory already exists in the cache
 	const cacheEntryExists = cache.some(
 		(entry) => entry.search_path === directoryPath,
 	);
 	if (cacheEntryExists) {
-		return res
-			.status(400)
-			.json({ error: "Directory already exists in the cache" });
+		res.status(400).json({
+			error: "Directory already exists in the cache",
+		});
+		return;
 	}
 
 	// Add the new directory to the cache
@@ -423,10 +426,11 @@ router.post("/module", async (req: Request, res: Response) => {
 router.delete("/module", async (req: Request, res: Response) => {
 	const directoryPath = req.body.directory as string;
 	if (!directoryPath) {
-		return res.status(400).json({ error: "Directory path is required" });
+		res.status(400).json({ error: "Directory path is required" });
+		return;
 	}
 
-	let cache = await readCache();
+	const cache = await readCache();
 
 	// Filter out the directory to remove it from the cache
 	const newCache = cache.filter(
@@ -434,9 +438,8 @@ router.delete("/module", async (req: Request, res: Response) => {
 	);
 
 	if (newCache.length === cache.length) {
-		return res
-			.status(400)
-			.json({ error: "Directory not found in the cache" });
+		res.status(400).json({ error: "Directory not found in the cache" });
+		return;
 	}
 
 	writeCache(newCache);
@@ -444,6 +447,7 @@ router.delete("/module", async (req: Request, res: Response) => {
 		message: "Directory removed from cache",
 		cache: newCache,
 	});
+	return;
 });
 
 // // Function to check if a cache entry needs updating
@@ -490,7 +494,7 @@ const updateCacheForDirectory = (
 	directoryPath: string,
 	cache: Cache,
 ): CacheEntry => {
-	let cacheEntry = findCacheForDirectory(cache, directoryPath);
+	const cacheEntry = findCacheForDirectory(cache, directoryPath);
 
 	const tsxFiles = getTsxFiles(directoryPath);
 	// const missingOrExtraFiles = getMissingOrExtraFiles(
@@ -531,7 +535,7 @@ const checkModuleConfig = (
 };
 
 router.get("/find-components", async (_, res: Response) => {
-	let cache = await readCache();
+	const cache = await readCache();
 
 	cache.forEach((entry) => {
 		const moduleConfig = checkModuleConfig(entry.search_path);
@@ -544,26 +548,6 @@ router.get("/find-components", async (_, res: Response) => {
 	writeCache(cache); // Update cache after processing
 	res.json(cache);
 });
-
-export const getSubDirectories = async (dirPath: string): Promise<string[]> => {
-	try {
-		const files = await fs.readdir(dirPath);
-		const subdirectories = [];
-
-		for (const file of files) {
-			const fullPath = path.join(dirPath, file);
-			const stats = await fs.stat(fullPath);
-			if (stats.isDirectory()) {
-				subdirectories.push(file);
-			}
-		}
-
-		return subdirectories;
-	} catch (err) {
-		console.error("Error reading the directory:", err);
-		return [];
-	}
-};
 
 const getExecutionData = async (
 	executionDir: string,
@@ -598,7 +582,8 @@ const getExecutionData = async (
 router.get("/session-data", async (req: Request, res: Response) => {
 	const filePath = req.query.filePath as string;
 	if (!filePath) {
-		return res.status(400).json({ error: "File path is required" });
+		res.status(400).json({ error: "File path is required" });
+		return;
 	}
 
 	const returnData: IGCFileSessionData = { primarySession: "", sessions: {} };
@@ -613,7 +598,8 @@ router.get("/session-data", async (req: Request, res: Response) => {
 	// Get the primary session info inside the session.config.json file
 	const sessionsConfigPath = path.join(sessionDir, "session.config.json");
 	if (!fs.existsSync(sessionsConfigPath)) {
-		return res.status(404).json({ error: "Session config file not found" });
+		res.status(404).json({ error: "Session config file not found" });
+		return;
 	}
 	// Read the session config file and get the current primary session data
 	const content = await safeOperation(() =>
@@ -639,9 +625,8 @@ router.get("/session-data", async (req: Request, res: Response) => {
 		if (!fs.existsSync(sessionConfigPath)) {
 			continue;
 		}
-		const sessionConfigData: SessionConfig = await fs.readJSON(
-			sessionConfigPath,
-		);
+		const sessionConfigData: SessionConfig =
+			await fs.readJSON(sessionConfigPath);
 
 		// Create a new session data object
 		const sessionData: IGCSession = {
@@ -654,16 +639,18 @@ router.get("/session-data", async (req: Request, res: Response) => {
 		for (let i = 0; i < sessionConfigData.path.length; i++) {
 			const nodeId = sessionConfigData.path[i];
 			const executionDir = path.join(executionsDir, `${i + 1}`);
-            try {
-                const executionData: IGCCodeNodeExecution = {
-                    ...(await getExecutionData(executionDir)),
-                    nodeId: nodeId,
-                };
-                sessionData.executions.push(executionData);
-            }
-            catch (error) {
-                console.error(`Error getting execution data for (${executionDir}):`, error);
-            }
+			try {
+				const executionData: IGCCodeNodeExecution = {
+					...(await getExecutionData(executionDir)),
+					nodeId: nodeId,
+				};
+				sessionData.executions.push(executionData);
+			} catch (error) {
+				console.error(
+					`Error getting execution data for (${executionDir}):`,
+					error,
+				);
+			}
 		}
 		// Update the overall configuration to the most recent one
 		// Get the most recent configuration file
@@ -677,16 +664,16 @@ router.get("/session-data", async (req: Request, res: Response) => {
 		returnData.sessions[session] = sessionData;
 	}
 
-	return res.json(returnData);
+	res.json(returnData);
+	return;
 });
 
 router.delete("/session-data-node", async (req: Request, res: Response) => {
 	const filePath = req.body.filePath as string;
 	const nodeId = req.body.nodeId as string;
 	if (!filePath || !nodeId) {
-		return res
-			.status(400)
-			.json({ error: "File path and node ID are required" });
+		res.status(400).json({ error: "File path and node ID are required" });
+		return;
 	}
 
 	// Keep track of the affected sessions
@@ -709,9 +696,8 @@ router.delete("/session-data-node", async (req: Request, res: Response) => {
 		if (!fs.existsSync(sessionConfigPath)) {
 			continue;
 		}
-		const sessionConfigData: SessionConfig = await fs.readJSON(
-			sessionConfigPath,
-		);
+		const sessionConfigData: SessionConfig =
+			await fs.readJSON(sessionConfigPath);
 
 		// If the node is present in the execution path, remove it
 		if (sessionConfigData.path.includes(nodeId)) {
@@ -744,9 +730,8 @@ router.delete("/session-data-node", async (req: Request, res: Response) => {
 			if (!fs.existsSync(sessionConfigPath)) {
 				continue;
 			}
-			const sessionConfigData: SessionConfig = await fs.readJSON(
-				sessionConfigPath,
-			);
+			const sessionConfigData: SessionConfig =
+				await fs.readJSON(sessionConfigPath);
 			if (sessionConfigData.timestamp > mostRecentTimestamp) {
 				mostRecentTimestamp = sessionConfigData.timestamp;
 				mostRecentSession = session;
@@ -758,7 +743,8 @@ router.delete("/session-data-node", async (req: Request, res: Response) => {
 		);
 	}
 
-	return res.json(affectedSessions);
+	res.json(affectedSessions);
+	return;
 });
 
 router.delete(
@@ -771,15 +757,16 @@ router.delete(
 		}: SessionDataDeleteExecutionRequest = req.body;
 
 		if (filePath === undefined) {
-			return res.status(400).json({ error: "File path is required" });
+			res.status(400).json({ error: "File path is required" });
+			return;
 		}
 		if (sessionId === undefined) {
-			return res.status(400).json({ error: "Session Id is required" });
+			res.status(400).json({ error: "Session Id is required" });
+			return;
 		}
 		if (executionNumber === undefined) {
-			return res
-				.status(400)
-				.json({ error: "Execution Number is required" });
+			res.status(400).json({ error: "Execution Number is required" });
+			return;
 		}
 
 		// Get the session directory
@@ -791,7 +778,8 @@ router.delete(
 		);
 		// Make sure session exists
 		if (!fs.existsSync(sessionDir)) {
-			return res.status(404).json({ error: "Session not found" });
+			res.status(404).json({ error: "Session not found" });
+			return;
 		}
 		// Read the session config file
 		const sessionConfigPath = path.join(
@@ -801,18 +789,19 @@ router.delete(
 		);
 		if (!fs.existsSync(sessionConfigPath)) {
 			// Error that the session has not been initialized
-			return res.status(400).json({ error: "Session not initialized" });
+			res.status(400).json({ error: "Session not initialized" });
+			return;
 		}
-		const sessionConfigData: SessionConfig = await fs.readJSON(
-			sessionConfigPath,
-		);
+		const sessionConfigData: SessionConfig =
+			await fs.readJSON(sessionConfigPath);
 
 		// Do a check to make sure the index is valid
 		if (
 			executionNumber < 1 ||
 			executionNumber > sessionConfigData.path.length
 		) {
-			return res.status(400).json({ error: "Invalid execution number" });
+			res.status(400).json({ error: "Invalid execution number" });
+			return;
 		}
 		// Remove the execution from the path
 		sessionConfigData.path.splice(executionNumber - 1, 1);
@@ -832,7 +821,8 @@ router.delete(
 			}),
 		);
 
-		return res.json(sessionConfigData.path);
+		res.json(sessionConfigData.path);
+		return;
 	},
 );
 router.post("/primary-session", async (req: Request, res: Response) => {
@@ -840,9 +830,10 @@ router.post("/primary-session", async (req: Request, res: Response) => {
 	const sessionId = req.body.sessionId as string;
 
 	if (!filePath || !sessionId) {
-		return res
-			.status(400)
-			.json({ error: "File path and session ID are required" });
+		res.status(400).json({
+			error: "File path and session ID are required",
+		});
+		return;
 	}
 
 	const sessionDir = path.join(
@@ -857,7 +848,8 @@ router.post("/primary-session", async (req: Request, res: Response) => {
 	const sessionConfigData = JSON.parse(content);
 
 	if (sessionConfigData.current === sessionId) {
-		return res.status(400).json({ error: "Session already active" });
+		res.status(400).json({ error: "Session already active" });
+		return;
 	}
 
 	sessionConfigData.current = sessionId;
@@ -865,7 +857,8 @@ router.post("/primary-session", async (req: Request, res: Response) => {
 		fs.writeJSON(sessionsConfigPath, sessionConfigData),
 	);
 
-	return res.json({ message: "Primary session updated" });
+	res.json({ message: "Primary session updated" });
+	return;
 });
 
 // Create a new session
@@ -874,9 +867,10 @@ router.post("/session", async (req: Request, res: Response) => {
 	const sessionId = req.body.sessionId as string;
 
 	if (!filePath || !sessionId) {
-		return res
-			.status(400)
-			.json({ error: "File path and session ID are required" });
+		res.status(400).json({
+			error: "File path and session ID are required",
+		});
+		return;
 	}
 
 	// Create the session directory
@@ -907,7 +901,8 @@ router.post("/session", async (req: Request, res: Response) => {
 		fs.writeJSON(sessionsConfigPath, { current: sessionId }),
 	);
 
-	return res.json({ message: "Session created" });
+	res.json({ message: "Session created" });
+	return;
 });
 
 router.delete("/session", async (req: Request, res: Response) => {
@@ -915,9 +910,10 @@ router.delete("/session", async (req: Request, res: Response) => {
 	const sessionId = req.body.sessionId as string;
 
 	if (!filePath || !sessionId) {
-		return res
-			.status(400)
-			.json({ error: "File path and session ID are required" });
+		res.status(400).json({
+			error: "File path and session ID are required",
+		});
+		return;
 	}
 
 	// Get the session directory
@@ -963,9 +959,8 @@ router.delete("/session", async (req: Request, res: Response) => {
 			if (!fs.existsSync(sessionConfigPath)) {
 				continue;
 			}
-			const sessionConfigData: SessionConfig = await fs.readJSON(
-				sessionConfigPath,
-			);
+			const sessionConfigData: SessionConfig =
+				await fs.readJSON(sessionConfigPath);
 			if (sessionConfigData.timestamp > mostRecentTimestamp) {
 				mostRecentTimestamp = sessionConfigData.timestamp;
 				mostRecentSession = session;
@@ -974,12 +969,14 @@ router.delete("/session", async (req: Request, res: Response) => {
 		sessionsConfigData.current = mostRecentSession;
 		await fs.writeJSON(sessionsConfigPath, sessionsConfigData);
 
-		return res.json({
+		res.json({
 			message: "Session removed",
 			newPrimary: mostRecentSession,
 		});
+		return;
 	}
-	return res.json({ message: "Session removed" });
+	res.json({ message: "Session removed" });
+	return;
 });
 
 export default router;

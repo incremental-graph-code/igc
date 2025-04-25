@@ -2,10 +2,19 @@
 	"extends": "./base.json",
 	"compilerOptions": {
 		"lib": ["ES2023"],
-		"module": "NodeNext",
-        "moduleResolution": "NodeNext",
+        "target": "ES2023",
+
+        
+        "module": "ESNext",
+        "moduleResolution": "bundler",
 		"types": ["jest", "node"],
-        "allowSyntheticDefaultImports": true
+
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+
+        "resolveJsonModule": true,
+        "declaration": true,
+        "sourceMap": true
 	},
 	"include": ["src"]
 }

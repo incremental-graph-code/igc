@@ -8,13 +8,13 @@ import {
 	CodeExecutionRequest,
 	CodeExecutionResponse,
 	CodeManyExecutionRequest,
-	createCustomLogger,
 	FileIdCodeList,
 	SessionConfig,
 } from "shared";
+import { createCustomLogger } from "shared/server";
 import { spawn, execFile } from "child_process";
 import { v4 as uuidv4 } from "uuid";
-import { getSubDirectories } from "./file-explorer";
+import { getSubDirectories } from "../utils/file";
 
 const router = Router();
 
@@ -66,11 +66,15 @@ const checkPythonInstallation = (): Promise<string | null> => {
 const addPathToSession = async (
 	nextNode: string,
 	executionPath: string,
-    filePath: string,
+	filePath: string,
 ): Promise<number> => {
 	const fileConfigPath = `${executionPath}/config.json`;
 
-	const data: SessionConfig = { path: [], timestamp: Date.now(), filePath: filePath };
+	const data: SessionConfig = {
+		path: [],
+		timestamp: Date.now(),
+		filePath: filePath,
+	};
 
 	try {
 		// Check if the file exists
@@ -113,10 +117,9 @@ export const executeCode = async (
 	code: string,
 	languageBinPath: string,
 	sessionId: string,
-    executionDir: string,
-    prevExecutionDir: string,
+	executionDir: string,
+	prevExecutionDir: string,
 ): Promise<Omit<CodeExecutionResponse, "metaNodeData">> => {
-
 	await fs.mkdir(executionDir, { recursive: true });
 
 	const stateFilePath = path.join(executionDir, "state.pkl");
@@ -295,25 +298,29 @@ router.post("/execute", async (req: Request, res: Response) => {
 
 	if (!code) {
 		logger.error("No code was provided in the request");
-		return res.status(400).send({ error: "No code provided" });
+		res.status(400).send({ error: "No code provided" });
+		return;
 	}
 	if (!filePath) {
 		logger.error(
 			"No file path to the IGC file was provided (filePath) was provided in the request",
 		);
-		return res.status(400).send({ error: "No path provided" });
+		res.status(400).send({ error: "No path provided" });
+		return;
 	}
 
 	// Currently only python is supported. Change this to support different languages
 	if (language !== "python") {
 		logger.error("Unsupported language", { language });
-		return res.status(400).send({ error: "Unsupported language" });
+		res.status(400).send({ error: "Unsupported language" });
+		return;
 	}
 
 	const pythonPath = await checkPythonInstallation();
 	if (!pythonPath) {
 		logger.error("Python is not installed");
-		return res.status(500).send({ error: "Python is not installed" });
+		res.status(500).send({ error: "Python is not installed" });
+		return;
 	}
 	const sessionKey = sessionId ?? uuidv4();
 
@@ -345,27 +352,31 @@ router.post("/execute", async (req: Request, res: Response) => {
 	}
 
 	// Get analysis data
-	let metaNodeData: CodeAnalysisResponse = {
-        dependencies: {
-            variables: [],
-            functions: [],
-            classes: [],
-            modules: []
-        },
-        new_definitions: {
-            variables: [],
-            functions: [],
-            classes: []
-        }
-    };
+	const metaNodeData: CodeAnalysisResponse = {
+		dependencies: {
+			variables: [],
+			functions: [],
+			classes: [],
+			modules: [],
+		},
+		new_definitions: {
+			variables: [],
+			functions: [],
+			classes: [],
+		},
+	};
 	// try {
 	// 	metaNodeData = await analyzeCode({ code, language });
 	// } catch (error) {
 	// 	logger.error("Error analyzing code", { error });
 	// 	return;
 	// }
-    // Update the specific session path file
-	const currentRunNumber = await addPathToSession(nodeId, executionsDir, filePath);
+	// Update the specific session path file
+	const currentRunNumber = await addPathToSession(
+		nodeId,
+		executionsDir,
+		filePath,
+	);
 
 	// Create the run directory
 	const executionDir = path.join(executionsDir, `${currentRunNumber}`);
@@ -374,15 +385,22 @@ router.post("/execute", async (req: Request, res: Response) => {
 		`${currentRunNumber - 1}`,
 	);
 
-	return res.send({
-		...(await executeCode(code, pythonPath, sessionKey, executionDir, prevExecutionDir)),
+	res.send({
+		...(await executeCode(
+			code,
+			pythonPath,
+			sessionKey,
+			executionDir,
+			prevExecutionDir,
+		)),
 		metaNodeData: metaNodeData,
 	});
+	return;
 });
 
 router.post("/execute-many", async (req: Request, res: Response) => {
 	const {
-        fileIdCodeList,
+		fileIdCodeList,
 		language,
 		filePath,
 		sessionId,
@@ -390,25 +408,29 @@ router.post("/execute-many", async (req: Request, res: Response) => {
 
 	if (!fileIdCodeList) {
 		logger.error("No code was provided in the request");
-		return res.status(400).send({ error: "No code provided" });
+		res.status(400).send({ error: "No code provided" });
+		return;
 	}
 	if (!filePath) {
 		logger.error(
 			"No file path to the IGC file was provided (filePath) was provided in the request",
 		);
-		return res.status(400).send({ error: "No path provided" });
+		res.status(400).send({ error: "No path provided" });
+		return;
 	}
 
 	// Currently only python is supported. Change this to support different languages
 	if (language !== "python") {
 		logger.error("Unsupported language", { language });
-		return res.status(400).send({ error: "Unsupported language" });
+		res.status(400).send({ error: "Unsupported language" });
+		return;
 	}
 
 	const pythonPath = await checkPythonInstallation();
 	if (!pythonPath) {
 		logger.error("Python is not installed");
-		return res.status(500).send({ error: "Python is not installed" });
+		res.status(500).send({ error: "Python is not installed" });
+		return;
 	}
 	const sessionKey = sessionId ?? uuidv4();
 
@@ -436,88 +458,152 @@ router.post("/execute-many", async (req: Request, res: Response) => {
 	// Create the executions directory (if needed)
 	const executionsDir = path.join(sessionDir, "executions");
 
-    // Run all of the code snippets
-    await executeMultiple(fileIdCodeList, pythonPath, sessionKey, executionsDir);
+	// Run all of the code snippets
+	await executeMultiple(
+		fileIdCodeList,
+		pythonPath,
+		sessionKey,
+		executionsDir,
+	);
 
-    return res.status(200).send({ message: "All code snippets executed successfully" });
+	res.status(200).send({
+		message: "All code snippets executed successfully",
+	});
+	return;
 });
 
-export const executeMultiple = async (fileIdCodeList: FileIdCodeList, languageBinPath: string, sessionId: string, executionsDir: string, prevExecutionDir?: string) => {
-    // Create executions directory if it doesn't exist
-    if (!fs.existsSync(executionsDir)) {
+export const executeMultiple = async (
+	fileIdCodeList: FileIdCodeList,
+	languageBinPath: string,
+	sessionId: string,
+	executionsDir: string,
+	prevExecutionDir?: string,
+) => {
+	// Create executions directory if it doesn't exist
+	if (!fs.existsSync(executionsDir)) {
 		await fs.mkdir(executionsDir, { recursive: true });
 	}
-    
-    // Recursively execute all the code snippets
-    for (const element of fileIdCodeList.elements) {
-        // Update the specific session path file
-        const currentRunNumber = await addPathToSession(element.id, executionsDir, fileIdCodeList.filePath);
 
-        // Create the run directory
-        const executionDir = path.join(executionsDir, `${currentRunNumber}`);
-        const pExecutionDir = prevExecutionDir !== undefined && currentRunNumber === 1 ? prevExecutionDir : path.join(
-            executionsDir,
-            `${currentRunNumber - 1}`,
-        );
-        fs.ensureDir(executionDir);
+	// Recursively execute all the code snippets
+	for (const element of fileIdCodeList.elements) {
+		// Update the specific session path file
+		const currentRunNumber = await addPathToSession(
+			element.id,
+			executionsDir,
+			fileIdCodeList.filePath,
+		);
 
-        if (typeof element.data === 'string') {
-            // It's a code snippet, execute it
-            await executeCode(element.data, languageBinPath, sessionId, executionDir, pExecutionDir);
-        } else {
-            // It's a nested FileIdCodeList, recursively execute it
-            const fileIdList = element.data as FileIdCodeList
-            const subExecutionDir = path.join(executionDir, "executions");
-            await fs.ensureDir(subExecutionDir);
-            // const subExecutionConfig: SessionConfig  = {
-                //     path: fileIdList.elements.map((element) => element.id),
-                //     timestamp: Date.now(),
-                //     filePath: fileIdList.filePath,
-                // };
-                // await fs.writeJSON(subExecutionConfigPath, subExecutionConfig);
-            await executeMultiple(fileIdList, languageBinPath, sessionId, path.join(executionsDir, `${currentRunNumber}`, "executions"), path.join(executionsDir, `${currentRunNumber-1}`));
-            const subExecutionConfigPath = path.join(subExecutionDir, "config.json");
-            const subExecutionConfig: SessionConfig = await fs.readJSON(subExecutionConfigPath);
+		// Create the run directory
+		const executionDir = path.join(executionsDir, `${currentRunNumber}`);
+		const pExecutionDir =
+			prevExecutionDir !== undefined && currentRunNumber === 1
+				? prevExecutionDir
+				: path.join(executionsDir, `${currentRunNumber - 1}`);
+		fs.ensureDir(executionDir);
 
-            // Aggregate all the files and configurations from the sub-executions
-            // Configurations file (take from the most recent sub execution)
-            const lastSubExecutionDir = path.join(subExecutionDir, `${subExecutionConfig.path.length}`);
-            await fs.copyFile(path.join(lastSubExecutionDir, "configuration.json"), path.join(executionDir, "configuration.json"));
-            // State file (take from the most recent sub execution)
-            await fs.copyFile(path.join(lastSubExecutionDir, "state.pkl"), path.join(executionDir, "state.pkl"));
-            // Metrics, Stdout, stderr files
-            const allSubExecutionDirs = await getSubDirectories(subExecutionDir);
-            let stdout = "";
-            let stderr = "";
-            let totalExecutionTime = 0;
-            for (const subExecution of allSubExecutionDirs.sort()) {
-                // Metrics
-                const subExecutionMetricsPath = path.join(subExecutionDir, subExecution, "metrics.json");
-                const subExecutionMetrics: CodeExecutionMetrics = await fs.readJSON(subExecutionMetricsPath);
-                totalExecutionTime += subExecutionMetrics.executionTime;
-                // Stdout
-                const subExecutionStdoutPath = path.join(subExecutionDir, subExecution, "std.out");
-                const subExecutionStdout = await fs.readFile(subExecutionStdoutPath, "utf8");
-                stdout += subExecutionStdout;
-                // Stderr
-                const subExecutionStderrPath = path.join(subExecutionDir, subExecution, "std.err");
-                const subExecutionStderr = await fs.readFile(subExecutionStderrPath, "utf8");
-                stderr += subExecutionStderr;
-            }
-            // Write the aggregated files
-            const metrics = {
-                executionTime: totalExecutionTime,
-                sessionId: sessionId,
-            };
-            const metricsPath = path.join(executionDir, "metrics.json");
-            await fs.writeJSON(metricsPath, metrics);
-            const stdoutPath = path.join(executionDir, "std.out");
-            await fs.writeFile(stdoutPath, stdout);
-            const stderrPath = path.join(executionDir, "std.err");
-            await fs.writeFile(stderrPath, stderr);
-        }
-    }
-}
+		if (typeof element.data === "string") {
+			// It's a code snippet, execute it
+			await executeCode(
+				element.data,
+				languageBinPath,
+				sessionId,
+				executionDir,
+				pExecutionDir,
+			);
+		} else {
+			// It's a nested FileIdCodeList, recursively execute it
+			const fileIdList = element.data as FileIdCodeList;
+			const subExecutionDir = path.join(executionDir, "executions");
+			await fs.ensureDir(subExecutionDir);
+			// const subExecutionConfig: SessionConfig  = {
+			//     path: fileIdList.elements.map((element) => element.id),
+			//     timestamp: Date.now(),
+			//     filePath: fileIdList.filePath,
+			// };
+			// await fs.writeJSON(subExecutionConfigPath, subExecutionConfig);
+			await executeMultiple(
+				fileIdList,
+				languageBinPath,
+				sessionId,
+				path.join(executionsDir, `${currentRunNumber}`, "executions"),
+				path.join(executionsDir, `${currentRunNumber - 1}`),
+			);
+			const subExecutionConfigPath = path.join(
+				subExecutionDir,
+				"config.json",
+			);
+			const subExecutionConfig: SessionConfig = await fs.readJSON(
+				subExecutionConfigPath,
+			);
+
+			// Aggregate all the files and configurations from the sub-executions
+			// Configurations file (take from the most recent sub execution)
+			const lastSubExecutionDir = path.join(
+				subExecutionDir,
+				`${subExecutionConfig.path.length}`,
+			);
+			await fs.copyFile(
+				path.join(lastSubExecutionDir, "configuration.json"),
+				path.join(executionDir, "configuration.json"),
+			);
+			// State file (take from the most recent sub execution)
+			await fs.copyFile(
+				path.join(lastSubExecutionDir, "state.pkl"),
+				path.join(executionDir, "state.pkl"),
+			);
+			// Metrics, Stdout, stderr files
+			const allSubExecutionDirs =
+				await getSubDirectories(subExecutionDir);
+			let stdout = "";
+			let stderr = "";
+			let totalExecutionTime = 0;
+			for (const subExecution of allSubExecutionDirs.sort()) {
+				// Metrics
+				const subExecutionMetricsPath = path.join(
+					subExecutionDir,
+					subExecution,
+					"metrics.json",
+				);
+				const subExecutionMetrics: CodeExecutionMetrics =
+					await fs.readJSON(subExecutionMetricsPath);
+				totalExecutionTime += subExecutionMetrics.executionTime;
+				// Stdout
+				const subExecutionStdoutPath = path.join(
+					subExecutionDir,
+					subExecution,
+					"std.out",
+				);
+				const subExecutionStdout = await fs.readFile(
+					subExecutionStdoutPath,
+					"utf8",
+				);
+				stdout += subExecutionStdout;
+				// Stderr
+				const subExecutionStderrPath = path.join(
+					subExecutionDir,
+					subExecution,
+					"std.err",
+				);
+				const subExecutionStderr = await fs.readFile(
+					subExecutionStderrPath,
+					"utf8",
+				);
+				stderr += subExecutionStderr;
+			}
+			// Write the aggregated files
+			const metrics = {
+				executionTime: totalExecutionTime,
+				sessionId: sessionId,
+			};
+			const metricsPath = path.join(executionDir, "metrics.json");
+			await fs.writeJSON(metricsPath, metrics);
+			const stdoutPath = path.join(executionDir, "std.out");
+			await fs.writeFile(stdoutPath, stdout);
+			const stderrPath = path.join(executionDir, "std.err");
+			await fs.writeFile(stderrPath, stderr);
+		}
+	}
+};
 
 const analyzeCode = async ({
 	code,
@@ -587,12 +673,14 @@ router.post("/analyze", async (req: Request, res: Response) => {
 
 	if (!code) {
 		logger.error("No code provided in the request");
-		return res.status(400).send({ error: "No code provided" });
+		res.status(400).send({ error: "No code provided" });
+		return;
 	}
 
 	if (language !== "python") {
 		logger.error("Unsupported language", { language });
-		return res.status(400).send({ error: "Unsupported language" });
+		res.status(400).send({ error: "Unsupported language" });
+		return;
 	}
 
 	try {

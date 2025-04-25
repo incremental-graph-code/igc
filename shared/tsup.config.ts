@@ -5,7 +5,7 @@ export default defineConfig({
 	outDir: "dist",
 	format: ["esm"],
 	target: "node22",
-	dts: true,
+	dts: false,
 	splitting: false,
 	clean: true,
 });

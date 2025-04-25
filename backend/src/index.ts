@@ -3,19 +3,20 @@ import cors from "cors";
 import fileExplorerRoutes from "./routes/file-explorer";
 import codeHandlerRoutes from "./routes/code-handler";
 import requestLogger from "./middleware/requestLogger";
-import path from "path";
+import { join } from 'path'
 import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
+import {__dirname} from "./utils/file";
 
 // Read from .env file
 dotenvExpand.expand(
-	dotenv.config({ path: path.join(__dirname, "../../.env") }),
+	dotenv.config({ path: join(__dirname, '../../.env') }),
 );
 
 const app = express();
 const PORT = parseInt(process.env.BACKEND_PORT || "5001");
 
-app.use(express.json());
+app.use(express.json());//
 
 // Configure CORS
 const corsOptions = {

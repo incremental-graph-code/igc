@@ -26,10 +26,10 @@ interface EditorProps {
  * @returns
  */
 const Editor = (props: EditorProps) => {
-	let { editorId, language, getSavedContent, saveLogic } = props;
+	let {getSavedContent, saveLogic } = props;
 
 	// Track the number of renders for performance testing
-	useRenderDebugger(`Editor: ${editorId}`, props);
+	useRenderDebugger(`Editor: ${props.editorId}`, props);
 
 	// State variables
 	const [content, setContent] = React.useState<string | undefined>(undefined);
@@ -40,7 +40,7 @@ const Editor = (props: EditorProps) => {
 	// Focus event
 	const handleFocus = () => {
 		// Set the editor as the key owner
-		context?.setRawKeyOwner(editorId);
+		context?.setRawKeyOwner(props.editorId);
 	};
 	// Blur event
 	const handleBlur = () => {
@@ -61,7 +61,7 @@ const Editor = (props: EditorProps) => {
 
 	/* Indicators */
 	// Save Indicator
-	useSaveIndicator(editorId, () => {
+	useSaveIndicator(props.editorId, () => {
 		try {
 			// Get saved content and compare with current value
 			const savedContent = getSavedContent();
@@ -71,7 +71,7 @@ const Editor = (props: EditorProps) => {
 				return "saved";
 			}
 			return "unsaved";
-		} catch (error) {
+		} catch {
 			// Set the file save status to error
 			return "error";
 		}
@@ -119,7 +119,7 @@ const Editor = (props: EditorProps) => {
 	useEffect(() => {
 		if (!context) return;
 
-		const unsubscribe = context.subscribe((e) => {
+		const unsubscribe = context.subscribe(() => {
 			if (!editor) return;
 		});
 
@@ -137,9 +137,9 @@ const Editor = (props: EditorProps) => {
 			}}
 		>
 			<MonacoEditor
-				path={editorId}
+				path={props.editorId}
 				height="100%"
-				defaultLanguage={language}
+				defaultLanguage={props.language}
 				defaultValue={getSavedContent()}
 				theme={mode === "light" ? "light" : "vs-dark"}
 				onChange={onChange}

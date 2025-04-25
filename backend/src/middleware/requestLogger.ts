@@ -1,6 +1,5 @@
-// middleware/requestLogger.ts
 import { Request, Response, NextFunction } from "express";
-import { createCustomLogger } from "shared";
+import { createCustomLogger } from "shared/server";
 
 const logger = createCustomLogger("backend");
 

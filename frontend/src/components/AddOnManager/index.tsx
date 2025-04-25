@@ -7,7 +7,6 @@ import path from "path-browserify";
 import { useComponentRegistry } from "@/hooks/useComponentRegistry";
 import {
 	fetchAndRegisterComponents,
-	loadComponentCache,
 } from "@/utils/componentCache";
 
 // MUI Icons

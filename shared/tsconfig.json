@@ -2,8 +2,10 @@
 	"extends": "../config/tsconfig/node.json",
 	"compilerOptions": {
 		"composite": true,
-		"outDir": "dist",
 		"rootDir": "src",
+		"outDir": "dist",
+		"emitDeclarationOnly": true
 	},
-	"include": ["src"]
+	"include": ["src/common/**/*.ts", "src/server/**/*.ts"],
+	"exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"]
 }

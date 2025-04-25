@@ -4,17 +4,7 @@ import { RegistryComponent } from "@/types/frontend";
 
 import useStore from "@/store/store";
 
-import React, { useEffect, useRef } from "react";
-// import { Editor } from "@monaco-editor/react";
-import { editor, KeyMod, KeyCode } from "monaco-editor";
-import { saveFileContent } from "@/requests";
-import {
-	deserializeGraphData,
-	isValidJSON,
-	serializeGraphData,
-} from "@/IGCItems/utils/serialization";
-import { Box } from "@mui/material";
-import { useSaveIndicator } from "@/hooks/useSaveIndicator";
+import React from "react";
 import Editor from "@/components/Editor";
 
 const RawGeneralTextView: React.FC = () => {
@@ -156,7 +146,7 @@ const RawGeneralTextView: React.FC = () => {
 
 	return (
 		<Editor
-			editorId="selectedFile"
+			editorId={selectedFile}
 			{...(isIGCFile && { language: "json" })}
             getSavedContent={() => {
                 return useStore.getState().fileContent || "";
