@@ -65,7 +65,7 @@ const RawCodeNodeView: React.FC = () => {
 					Object.values(savedNodes[sFile]),
 					Object.values(useStore.getState().savedEdges[sFile]),
 				);
-				saveFileContent(sFile, rawGraphData).then((_) => {
+				saveFileContent(sFile, rawGraphData).then(() => {
 					useStore.getState().updateFileContent(() => rawGraphData);
 				});
 			}

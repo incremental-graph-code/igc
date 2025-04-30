@@ -54,6 +54,7 @@ import { isGraphNode } from "@/IGCItems/nodes/GraphNode";
 import { fileExists } from "@/requests";
 
 import { toSvg } from "html-to-image";
+import _ from 'lodash';
 
 const GraphEditor: React.FC = () => {
 	// VARIABLES
@@ -71,8 +72,8 @@ const GraphEditor: React.FC = () => {
 	const nodeTypes = useStore((state) => state.nodeTypes);
 	const relationshipTypes = useStore((state) => state.relationshipTypes);
 
-	const nodes = useMemo(() => selectedFile === null ? [] : getNodes(selectedFile), [selectedFile, getNodes]);
-	const edges = useMemo(() => selectedFile === null ? [] : getEdges(selectedFile), [selectedFile, getEdges]);
+	const nodes = selectedFile === null ? [] : getNodes(selectedFile);
+	const edges = selectedFile === null ? [] : getEdges(selectedFile);
 
 	// STATE
 	const [showGraph, setShowGraph] = useState(false); // If the graph should show up or not
@@ -99,12 +100,21 @@ const GraphEditor: React.FC = () => {
 		// Look at which nodes are selected
 		const newSelectedNodes: Node[] = nodes.filter((node) => node.selected);
 
+        // REMOVE WHEN SYNCING IS DONE
+        if(_.isEqual(_.sortBy(newSelectedNodes.map(n => n.id)), _.sortBy(selectedNodes.map(n => n.id)))) {
+            return;
+        }
 		setSelectedNodes(newSelectedNodes);
 	}, [nodes]);
 
 	// If an edge is changed, check to see if there are any selection changes
 	useEffect(() => {
 		const newSelectedEdges: Edge[] = edges.filter((edge) => edge.selected);
+
+        // REMOVE WHEN SYNCING IS DONE
+        if(_.isEqual(_.sortBy(newSelectedEdges.map(e => e.id)), _.sortBy(selectedEdges.map(e => e.id)))) {
+            return;
+        }
 		setSelectedEdges(newSelectedEdges);
 	}, [edges]);
 

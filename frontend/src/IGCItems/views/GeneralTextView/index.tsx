@@ -6,6 +6,10 @@ import useStore from "@/store/store";
 
 import React from "react";
 import Editor from "@/components/Editor";
+import { saveFileContent } from "@/requests";
+import { editor } from "monaco-editor";
+import { deserializeGraphData } from "@/IGCItems/utils/serialization";
+
 
 const RawGeneralTextView: React.FC = () => {
 	// Get data store variables
@@ -143,34 +147,47 @@ const RawGeneralTextView: React.FC = () => {
 	// if (fileContent === null || selectedFile === null) {
 	// 	return <div className="text-display">No File Selected</div>;
 	// }
+	const saveLogic = (content: string) => {
+        if (selectedFile === null || content === undefined) {
+            return;
+        }
+		// EDIT WHEN SYNC REGISTRY IMPLEMENTED
+		saveFileContent(selectedFile, content).then(() => {
+			useStore.getState().updateFileContent(() => content);
+		});
+	};
+
+    const onMount = (editor: editor.IStandaloneCodeEditor) => {
+        if(isIGCFile) {
+            const curModel = editor.getModel();
+            if (curModel === null) {
+                return;
+            }
+            const fullRange = curModel.getFullModelRange();
+            const edits: editor.IIdentifiedSingleEditOperation[] = [
+                {
+                  range: fullRange,
+                  text: deserializeGraphData(
+                    useStore.getState().getNodes(selectedFile),
+                    useStore.getState().getEdges(selectedFile),
+                  ),
+                  forceMoveMarkers: true, // keep markers (breakpoints, squiggles, etc.) aligned
+                },
+              ];
+            curModel.pushEditOperations(null, edits, () => null)
+        }
+    }
 
 	return (
 		<Editor
 			editorId={selectedFile}
 			{...(isIGCFile && { language: "json" })}
-            getSavedContent={() => {
-                return useStore.getState().fileContent || "";
-            }}
+			getSavedContent={() => {
+				return useStore.getState().fileContent || "";
+			}}
+			saveLogic={saveLogic}
+            onMount={onMount}
 		/>
-		// <Box
-		// 	sx={{
-		// 		position: "absolute",
-		// 		top: 0,
-		// 		left: 0,
-		// 		right: 0,
-		// 		bottom: 0,
-		// 	}}
-		// >
-		// 	<Editor
-		// 		path={selectedFile}
-		// 		height="100%"
-		// 		{...(isIGCFile && { defaultLanguage: "json" })}
-		// 		defaultValue={fileContent}
-		// 		theme={mode === "light" ? "light" : "vs-dark"}
-		// 		onChange={onChange}
-		// 		onMount={onMount}
-		// 	/>
-		// </Box>
 	);
 };
 

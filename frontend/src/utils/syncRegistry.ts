@@ -1,7 +1,8 @@
+import { SyncID, SyncSystem } from "@/adapters/consts";
+
 /**
  * A unique identifier used to register a syncable system.
  */
-type SyncID = string;
 
 /**
  * An adapter that defines how to get/set a system's state,
@@ -70,7 +71,7 @@ export const unregisterSyncSystem = (id: SyncID): void => {
  * @param sourceId - The system initiating the sync (will be excluded).
  */
 export const synchronize = (sourceId: SyncID): void => {
-	const textAdapter = registry.get("text");
+	const textAdapter = registry.get(SyncSystem.Text);
 	if (!textAdapter) {
 		throw new Error("No 'text' system registered — cannot synchronize.");
 	}
@@ -78,7 +79,7 @@ export const synchronize = (sourceId: SyncID): void => {
 	const currentText = textAdapter.get();
 
 	for (const [id, adapter] of registry.entries()) {
-		if (id === "text" || id === sourceId) continue;
+		if (id === SyncSystem.Text || id === sourceId) continue;
 
 		const newValue = adapter.deserialize(currentText);
 		adapter.set(newValue);
@@ -94,7 +95,7 @@ export const synchronize = (sourceId: SyncID): void => {
  */
 export const applySystemChange = (id: SyncID): void => {
 	const adapter = registry.get(id);
-	const textAdapter = registry.get("text");
+	const textAdapter = registry.get(SyncSystem.Text);
 
 	if (!adapter || !textAdapter) return;
 
@@ -103,7 +104,7 @@ export const applySystemChange = (id: SyncID): void => {
 	const newText = adapter.serialize(localValue, prevText);
 
 	textAdapter.set(newText);
-	synchronize("text");
+	synchronize(SyncSystem.Text);
 };
 
 /**

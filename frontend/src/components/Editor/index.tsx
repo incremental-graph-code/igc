@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect } from "react";
 import { Box } from "@mui/material";
 import { useRenderDebugger } from "@/hooks/useRenderDebugger";
 import { Editor as MonacoEditor } from "@monaco-editor/react";
@@ -7,13 +7,16 @@ import { editor } from "monaco-editor";
 
 // import { debounce } from 'lodash';
 import { useSaveIndicator } from "@/hooks/useSaveIndicator";
-import { GlobalKeyDownContext } from "@/providers/GlobalKeyDownProvider";
+import {
+	GlobalKeyDownContext,
+	KeyPressListener,
+} from "@/providers/GlobalKeyDownProvider";
 
 interface EditorProps {
 	editorId: string;
 	language?: string;
 	getSavedContent?: () => string;
-	saveLogic?: () => void;
+	saveLogic?: (string) => void;
 	onChange?: (
 		value: string | undefined,
 		event: editor.IModelContentChangedEvent,
@@ -26,7 +29,7 @@ interface EditorProps {
  * @returns
  */
 const Editor = (props: EditorProps) => {
-	let {getSavedContent, saveLogic } = props;
+	let { getSavedContent, saveLogic } = props;
 
 	// Track the number of renders for performance testing
 	useRenderDebugger(`Editor: ${props.editorId}`, props);
@@ -35,17 +38,17 @@ const Editor = (props: EditorProps) => {
 	const [content, setContent] = React.useState<string | undefined>(undefined);
 
 	// Subscribe to key press events
-	const context = useContext(GlobalKeyDownContext);
+	const globalKeyCtx = useContext(GlobalKeyDownContext);
 
 	// Focus event
 	const handleFocus = () => {
 		// Set the editor as the key owner
-		context?.setRawKeyOwner(props.editorId);
+		globalKeyCtx?.setRawKeyOwner(props.editorId);
 	};
 	// Blur event
 	const handleBlur = () => {
 		// Clear the key owner
-		context?.setRawKeyOwner(null);
+		globalKeyCtx?.setRawKeyOwner(null);
 	};
 
 	// Provide default logic if none is provided
@@ -55,6 +58,27 @@ const Editor = (props: EditorProps) => {
 	if (saveLogic === undefined) {
 		saveLogic = () => {};
 	}
+
+	// Handle save logic
+	const handleSaveShortcut = useCallback<KeyPressListener>(
+		(ev) => {
+			const isSaveCombo =
+				(ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s";
+
+			// Bail if it is not the save combo
+			if (
+				!isSaveCombo
+			)
+				return;
+
+			ev.preventDefault();
+			ev.stopPropagation();
+
+            // Call the save logic
+			saveLogic(content);
+		},
+		[saveLogic, content],
+	);
 
 	// Get theme mode
 	const mode = useStore((state) => state.mode);
@@ -117,14 +141,15 @@ const Editor = (props: EditorProps) => {
 
 	// Subscribe to global keydown context and forward to editor
 	useEffect(() => {
-		if (!context) return;
+		if (!globalKeyCtx) return;
 
-		const unsubscribe = context.subscribe(() => {
-			if (!editor) return;
-		});
+		const unsubscribe = globalKeyCtx.subscribe(handleSaveShortcut);
+		// const unsubscribe = globalKeyCtx.subscribe(() => {
+		// 	if (!editor) return;
+		// });
 
 		return () => unsubscribe();
-	}, [context]);
+	}, [globalKeyCtx, handleSaveShortcut]);
 
 	return (
 		<Box

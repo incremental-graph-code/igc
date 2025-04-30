@@ -195,8 +195,9 @@ export const createDefaultSlice = (
 		});
 	},
 
-	projectDirectory:
-		"/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/content",
+	projectDirectory: 
+        "/Users/maxboksem/Code/Github/Web/igc/.vscode/flask-backend",
+		// "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/content",
 	setProjectDirectory: (updater: (prev: string | null) => string | null) =>
 		set((state) => {
 			state.setSelectedFile(() => null); // Reset the selected file

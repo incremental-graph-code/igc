@@ -1,4 +1,11 @@
-import { createContext, useEffect, useRef, FC, ReactNode } from "react";
+import {
+	createContext,
+	useEffect,
+	useRef,
+	FC,
+	ReactNode,
+	RefObject,
+} from "react";
 
 export interface KeyPressListener {
 	(event: KeyboardEvent): void;
@@ -10,12 +17,10 @@ interface GlobalKeyDownContextValue {
 	getRawKeyOwner: () => string | null;
 }
 
-//Create the context; the default is `undefined` so we can check for it.
 export const GlobalKeyDownContext = createContext<
 	GlobalKeyDownContextValue | undefined
 >(undefined);
 
-// Create a provider component
 interface GlobalKeyDownProviderProps {
 	children: ReactNode;
 }
@@ -23,14 +28,29 @@ interface GlobalKeyDownProviderProps {
 export const GlobalKeyDownProvider: FC<GlobalKeyDownProviderProps> = ({
 	children,
 }) => {
-	const subscribersRef = useRef<Set<KeyPressListener>>(new Set());
-	const rawKeyOwnerRef = useRef<string | null>(null); // who currently handles keys natively
 
+	const subscribersRef = useRef<Set<KeyPressListener>>(new Set());
+	const rawKeyOwnerRef: RefObject<string | null> = useRef(null);
+
+	const isTypingField = (el: EventTarget | null): el is HTMLElement => {
+		if (!el || !(el as HTMLElement).tagName) return false;
+
+		const target = el as HTMLElement;
+		const tag = target.tagName.toLowerCase();
+
+		// Allow plain text boxes, search boxes, number fields, etc.
+		if (tag === "input" || tag === "textarea") return true;
+
+		// Editable divs / spans
+		if (target.isContentEditable) return true;
+
+		return false;
+	};
+
+	/** PUBLIC API */
 	const subscribe = (listener: KeyPressListener) => {
 		subscribersRef.current.add(listener);
-		return () => {
-			subscribersRef.current.delete(listener);
-		};
+		return () => subscribersRef.current.delete(listener);
 	};
 
 	const setRawKeyOwner = (owner: string | null) => {
@@ -39,17 +59,19 @@ export const GlobalKeyDownProvider: FC<GlobalKeyDownProviderProps> = ({
 
 	const getRawKeyOwner = () => rawKeyOwnerRef.current;
 
+    /** KEY HANDLER */
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const owner = rawKeyOwnerRef.current;
 
-			// If an owner is set (e.g., Monaco), don't interfere
-			if (!owner) {
+			const allowBecauseInput = isTypingField(e.target);
+
+			if (!owner && !allowBecauseInput) {
 				e.preventDefault();
 				e.stopPropagation();
 			}
 
-			// Notify subscribers regardless — let them opt out too if they want
+			// Forward to all subscribers so they can still react if they want
 			subscribersRef.current.forEach((listener) => listener(e));
 		};
 
@@ -57,6 +79,7 @@ export const GlobalKeyDownProvider: FC<GlobalKeyDownProviderProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, []);
 
+	/** PROVIDER */
 	return (
 		<GlobalKeyDownContext.Provider
 			value={{ subscribe, setRawKeyOwner, getRawKeyOwner }}

@@ -1,4 +1,9 @@
-import { applySystemChange, registerSyncSystem, unregisterSyncSystem } from "@/utils/syncRegistry";
+import { SyncID } from "@/adapters/consts";
+import {
+	applySystemChange,
+	registerSyncSystem,
+	unregisterSyncSystem,
+} from "@/utils/syncRegistry";
 import { useEffect, useCallback } from "react";
 
 /**
@@ -26,7 +31,7 @@ import { useEffect, useCallback } from "react";
  * ```
  */
 export const useSyncSystem = <T>(
-	id: string,
+	id: SyncID,
 	adapter: {
 		get: () => T;
 		set: (value: T) => void;
