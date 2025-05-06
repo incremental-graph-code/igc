@@ -1,217 +1,130 @@
+/**
+ * @file FileNavigator component for displaying and managing the file tree structure.
+ *
+ * This component fetches and displays the file tree for the current project directory.
+ *
+ * @module FileNavigator
+ */
+
+import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { FileNode } from "shared";
 import { getFileTree } from "@/requests";
 import useStore from "@/store/store";
-import React, { useState, useImperativeHandle, forwardRef } from "react";
-
-import { FileNode } from "shared";
-import ContextMenu, { ContextMenuState } from "../ContextMenu";
-
-import path from "path-browserify";
-
-import TreeView from "../TreeView";
-import {
-	createEmptyIGCFile,
-	createNewDirectory,
-	createNewFile,
-	deleteFileOrDirectory,
-	getFileContent,
-	renameFileOrDirectory,
-} from "@/requests";
-import { isValidIGC } from "@/IGCItems/utils/serialization";
 
 import styles from "./FileNavigator.module.css";
+import { Tree } from "react-arborist";
+import { TreeRow } from "../TreeRow";
+import TreeItem from "../TreeItem";
+import { useSize } from "@/hooks/useSize";
 
-interface FileNavigatorProps {}
+// To track if directories are open or closed
+const STORAGE_KEY = "IGC.treeOpenState";
 
-enum FileNodeType {
-    File,
-    Directory,
-}
+/**
+ * FileNavigator component.
+ *
+ * Displays the file tree for the current project directory.
+ * Handles loading and error states, and refreshes the tree when the project directory changes.
+ *
+ * @returns {JSX.Element} The rendered FileNavigator component.
+ */
+const FileNavigator: FC = () => {
+	const projectDirectory = useStore((state) => state.projectDirectory);
 
-export interface FileNavigatorRef {
-	refreshFileTree: () => void;
-	createNewFileHandler: () => void;
-	createNewDirectoryHandler: () => void;
-}
+	const [loading, setLoading] = useState<boolean>(false);
+	const [error, setError] = useState<string | null>(null);
+	const [tree, setTree] = useState<FileNode[]>([]);
+	const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => {
+		try {
+			const raw = window.localStorage.getItem(STORAGE_KEY);
+			return raw ? JSON.parse(raw) : {};
+		} catch {
+			return {};
+		}
+	});
 
-const FileNavigator = forwardRef<FileNavigatorRef>(
-	({}: FileNavigatorProps, ref) => {
-		// State
-		const { setSelectedFile, projectDirectory } = useStore(); // Variables from data store
+	const parentRef = useRef<HTMLDivElement>(null);
 
-		const [selectedNode, setSelectedNode] = useState<FileNode | null>(null);
-		const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
-		const [tree, setTree] = useState<FileNode[]>([]);
-		const [treeItemEditing, setTreeItemEditing] = useState<string | null>(
-			null,
-		);
-		const [expandedSet, setExpandedSet] = useState<Set<string>>(
-			new Set<string>(),
-		);
+	const size = useSize(parentRef);
 
-		const [loading, setLoading] = useState<boolean>(false);
-		const [error, setError] = useState<string | null>(null);
-
-		// Update the file tree
-		const refresh = () => {
-			if (projectDirectory === null) {
-				throw new Error("Project directory is not set");
-				return;
-			}
-			setLoading(true);
-			setError(null);
-			getFileTree(projectDirectory)
-				.then((response: FileNode[]) => {
-					setLoading(false);
-					setTree(response);
-				})
-				.catch((error: string) => {
-					setError(error);
-					setLoading(false);
-				});
-		};
-
-		const createNew = async (type: FileNodeType) => {
-			if (projectDirectory === null) return;
-			let dirPath = projectDirectory;
-			if (selectedNode !== null) {
-				dirPath =
-					selectedNode.type === FileNodeType.Directory
-						? selectedNode.fullPath
-						: path.dirname(selectedNode.fullPath);
-			}
-
-			let newPath = "";
-			if (type === FileNodeType.File) {
-				newPath = path.join(dirPath, "New File");
-				await createNewFile(newPath);
-			} else if (type === FileNodeType.Directory) {
-				newPath = path.join(dirPath, "New Folder");
-				await createNewDirectory(newPath);
-			}
-
-			refresh();
-			setTreeItemEditing(newPath); // Enable renaming immediately
-		};
-
-		// For file explorer
-		useImperativeHandle(ref, () => ({
-			refreshFileTree: () => {
-				refresh();
-			},
-			createNewFileHandler: () => {
-				createNew(FileNodeType.File);
-			},
-			createNewDirectoryHandler: () => {
-				createNew(FileNodeType.Directory);
-			},
-		}));
-
-		const handleNodeSelect = (node: FileNode) => {
-			setSelectedNode(node);
-			if (node.type === FileNodeType.File) {
-				setSelectedFile(() => node.fullPath);
-			}
-		};
-
-		const handleNodeRename = async (node: FileNode, newName: string) => {
-			if (!selectedNode) return;
-			if (newName === "") return;
-
-			const updatedNode = { ...selectedNode, name: newName };
-			console.log(`Renaming ${selectedNode.fullPath} to ${newName}`);
-			const newPath = path.join(path.dirname(node.fullPath), newName);
-			await renameFileOrDirectory(node.fullPath, newPath);
-
-			setTree((prevTree) =>
-				prevTree.map((n) =>
-					n.fullPath === updatedNode.fullPath ? updatedNode : n,
-				),
-			);
-			// Check if the new file is an igc file or if it does not decode to a proper json
-			if (newName.endsWith(".igc")) {
-				// Get file content
-				const fileContent = await getFileContent(newPath);
-				if (!isValidIGC(fileContent.content)) {
-					// Create an empty igc file
-					console.log(`Creating empty IGC file ${newPath}`);
-					await createEmptyIGCFile(newPath);
-				}
-			}
-
-			// Refresh the file tree
-			refresh();
-		};
-		const handleDelete = async (node: FileNode | null) => {
-			if (node === null) return;
-			console.log(`Deleting ${node.fullPath}`);
-			await deleteFileOrDirectory(node.fullPath);
-			setTree((prevTree) =>
-				prevTree.filter((n) => n.fullPath !== node.fullPath),
-			);
-		};
-
-		const handleNodeContextMenu = (
-			event: React.MouseEvent,
-			node: FileNode,
-		) => {
-			event.preventDefault();
-			setContextMenu({
-				mouseX: event.clientX - 2,
-				mouseY: event.clientY - 4,
+	/**
+	 * Fetches and updates the file tree for the current project directory.
+	 * Sets loading and error states accordingly.
+	 */
+	const refresh = () => {
+		if (projectDirectory === null) {
+			throw new Error("Project directory is not set");
+			return;
+		}
+		setLoading(true);
+		setError(null);
+		getFileTree(projectDirectory)
+			.then((response: FileNode[]) => {
+				setLoading(false);
+				setTree(response);
+			})
+			.catch((error: string) => {
+				setError(error);
+				setLoading(false);
 			});
-			setSelectedNode(node);
-			refresh();
-		};
+	};
+	// Handle the opening and closing of directories
+	const handleToggle = useCallback((id: string) => {
+		setOpenMap((prev) => ({
+			...prev,
+			[id]: !prev[id],
+		}));
+	}, []);
 
-		const handleClose = () => {
-			setContextMenu(null);
-		};
+	// Refresh the file tree whenever the project directory changes.
+	useEffect(() => {
+		refresh();
+	}, [projectDirectory]);
+	// Update the cached open/closed state of directories in local storage
+	useEffect(() => {
+		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openMap));
+	}, [openMap]);
 
-		return (
-			<>
-				<div style={{ height: "30%", maxHeight: "30%" }}>
-					{loading ? (
-						<div className="loading">
-							<p>Loading...</p>
-						</div>
-					) : error ? (
-						<p>Error: {error}</p>
-					) : tree.length !== 0 ? (
-						<div className={styles.treeViewContainer}>
-							<TreeView
-								nodes={tree}
-								selectedNodeId={selectedNode?.fullPath || null}
-								actions={{
-									onSelect: handleNodeSelect,
-									onRename: handleNodeRename,
-									onContextMenu: handleNodeContextMenu,
-								}}
-								state={{
-									editing: treeItemEditing,
-									setEditing: setTreeItemEditing,
-									expandedSet: expandedSet,
-									setExpandedSet: setExpandedSet,
-								}}
-							/>
-						</div>
-					) : (
-						<div style={{ margin: "10px" }}>No Project Open</div>
-					)}
-				</div>
-				<ContextMenu
-					mouseX={contextMenu?.mouseX || null}
-					mouseY={contextMenu?.mouseY || null}
-					handleClose={handleClose}
-					actions={{
-						onRename: () =>
-							setTreeItemEditing(selectedNode?.fullPath || null),
-						onDelete: () => handleDelete(selectedNode),
-						// Other actions can be omitted and will default to empty functions
-					}}
-				/>
-			</>
-		);
-	},
-);
+	if (loading) {
+		return <div>Loading...</div>;
+	}
+	if (error !== null) {
+		return <div>Error: {error}</div>;
+	}
+	return (
+		<div ref={parentRef}>
+			<Tree
+				openByDefault={false}
+				initialOpenState={openMap}
+				onToggle={handleToggle}
+				width={size?.width}
+				height={size?.height}
+				data={tree}
+				idAccessor="fullPath"
+				renderRow={TreeRow}
+				onMove={
+					({ dragIds, parentId, index }) => {}
+					//move(dragIds[0], parentId)
+				}
+				onRename={
+					({ id, name }) => {
+                        console.log("rename", id, name);
+                    }
+					//move(id, `${path.dirname(id)}/${name}`)
+				}
+				// onCreate={({ parentId, index }) => {
+				// 	/* optional: call your create API */
+				// }}
+				onDelete={({ ids }) => {
+					/* optional: call your delete API */
+				}}
+				rowHeight={32}
+				indent={16}
+			>
+				{TreeItem}
+			</Tree>
+		</div>
+	);
+};
 
 export default FileNavigator;

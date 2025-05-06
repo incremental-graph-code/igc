@@ -1,134 +1,294 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-	ListItemIcon,
-	ListItemText,
-	InputBase,
-	Typography,
-	ListItemButton,
-	List,
-} from "@mui/material";
-import FolderIcon from "@mui/icons-material/Folder";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { NodeRendererProps } from "react-arborist";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import { FileNode } from "shared";
+import FolderIcon from "@mui/icons-material/Folder";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import styles from "./TreeItem.module.css";
-import { TreeItemActionHandlers, TreeItemState } from "@/types/frontend";
+import copyToClipboard from "copy-to-clipboard";
+import toast from "react-hot-toast";
+import { FileNode, FileNodeType } from "shared";
+import { ContextMenuItem } from "@/providers/ContextMenuProvider";
+import { useContextMenu } from "@/hooks/useContextMenu";
+import useStore from "@/store/store";
+import { copyFileOrDirectory, renameFileOrDirectory } from "@/requests";
+import path from "path-browserify";
 
-interface TreeItemProps {
-	node: FileNode;
-	selectedNodeId: string | null;
-	depth: number;
-	actions: TreeItemActionHandlers;
-	state: TreeItemState;
-}
+type Action =
+	| "open"
+	| "rename"
+	| "copy"
+	| "cut"
+	| "paste"
+	| "copyPath"
+	| "copyRelPath"
+	| "delete";
 
-const TreeItem: React.FC<TreeItemProps> = ({
+const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 	node,
-	selectedNodeId,
-	depth,
-	actions: { onContextMenu, onSelect, onRename },
-	state: { editing, setEditing, expandedSet, setExpandedSet },
+	style,
+	tree,
+	dragHandle,
 }) => {
-	const [inputValue, setInputValue] = useState(node.name);
-	const inputRef = useRef<HTMLInputElement | null>(null);
+    // PUT THIS IN A STORE
+    const [clipboard, setClipboard] = useState<{ path: string; cut: boolean } | null>(null);
 
-	// Automatically focus and select the filename (without extension) when entering edit mode
-	useEffect(() => {
-		if (editing === node.fullPath && inputRef.current) {
-			setInputValue(node.name);
-			inputRef.current.focus();
-			inputRef.current.setSelectionRange(0, node.name.split(".")[0].length);
-		}
-	}, [editing, node.fullPath, node.name]);
+	const projectDirectory = useStore((state) => state.projectDirectory);
 
-	const handleBlur = () => {
-		if (onRename !== undefined) {
-			onRename(node, inputValue);
-		}
-		setEditing(null);
-	};
+	const menuItems: ContextMenuItem<Action>[] = [
+		{
+			id: "open",
+			label: "Open",
+			onClick: () => {
+				node.open();
+				node.select();
+			},
+			separator: true,
+		},
+		{
+			id: "rename",
+			label: "Rename",
+			onClick: () => {
+				node.edit();
+			},
+			separator: true,
+		},
+		{
+			id: "copy",
+			label: "Copy",
+			onClick: () => {
+				setClipboard({ path: node.data.fullPath, cut: false });
+			},
+		},
+		{
+			id: "cut",
+			label: "Cut",
+			onClick: () => {
+				setClipboard({ path: node.data.fullPath, cut: true });
+			},
+		},
+		{
+			id: "paste",
+			label: "Paste",
+			onClick: async () => {
+				if (clipboard !== null) {
+					// Path to paste to
+					let pastePath = node.data.fullPath;
+					// Check if node is a file
+					if (node.data.type === FileNodeType.File) {
+						// If it is a file, get the parent directory
+						pastePath = node.parent?.data.fullPath ?? "";
+					}
+                    // Add the file name to the path
+                    pastePath = path.join(
+                        pastePath,
+                        path.basename(clipboard.path),
+                    );
 
-	const handleSelect = () => {
-		if (onSelect !== undefined) {
-			onSelect(node);
-		}
-        if(node.type === "directory"){
-            setExpandedSet((prevSet) => {
-                if(!prevSet.delete(node.fullPath)) {
-                    prevSet.add(node.fullPath);
-                }
-                return new Set(prevSet);
-            });
-        }
-	};
+					if (clipboard.cut) {
+						await renameFileOrDirectory(clipboard.path, pastePath);
+					} else {
+						await copyFileOrDirectory(clipboard.path, pastePath);
+					}
+					setClipboard(null);
+				}
+			},
+			separator: true,
+		},
+		{
+			id: "copyPath",
+			label: "Copy Path",
+			onClick: () => {
+				const path = node.data.fullPath;
+				copyToClipboard(path);
+				toast.success("Copied path to clipboard", {
+					duration: 2000,
+					position: "top-center",
+				});
+			},
+		},
+		{
+			id: "copyRelPath",
+			label: "Copy Relative Path",
+			onClick: () => {
+				const path: string = node.data.fullPath;
+				const relativePath = path.startsWith(projectDirectory)
+					? path
+							.substring(projectDirectory.length)
+							.replace(/^\/|^\.\//, "")
+					: path.startsWith("/") || path.startsWith("./")
+						? path.replace(/^\/|^\.\//, "")
+						: path;
+				copyToClipboard(relativePath);
+				toast.success("Copied relative path to clipboard", {
+					duration: 2000,
+					position: "top-center",
+				});
+			},
+			separator: true,
+		},
+		{
+			id: "delete",
+			label: "Delete",
+			onClick: (id) => console.log("Action:", id),
+			disabled: true,
+		},
+	];
 
-	const onDoubleClick = () => {
-		setEditing(node.fullPath);
-	};
+	const { onContextMenu } = useContextMenu(menuItems);
 
-	const paddingLeft = `${depth * 1.5}em`;
+	// // close context menu on outside click / Esc
+	// useEffect(() => {
+	// 	const onClickAway = (e: MouseEvent) => {
+	// 		if (
+	// 			containerRef.current &&
+	// 			!containerRef.current.contains(e.target as Node)
+	// 		) {
+	// 			setContextPos(null);
+	// 		}
+	// 	};
+	// 	const onEsc = (e: KeyboardEvent) => {
+	// 		if (e.key === "Escape") setContextPos(null);
+	// 	};
+	// 	document.addEventListener("mousedown", onClickAway);
+	// 	document.addEventListener("keydown", onEsc);
+	// 	return () => {
+	// 		document.removeEventListener("mousedown", onClickAway);
+	// 		document.removeEventListener("keydown", onEsc);
+	// 	};
+	// }, []);
+	// const handleAction = async (action: string) => {
+	// 	const path = node.data.id;
+	// 	const parentPath = node.parent?.data.id ?? "";
+	// 	switch (action) {
+	// 		case "open":
+	// 			if (node.isInternal) {
+	// 				await getTree(path);
+	// 				node.open();
+	// 			} else {
+	// 				window.open(
+	// 					`/edit?file=${encodeURIComponent(path)}`,
+	// 					"_blank",
+	// 				);
+	// 			}
+	// 			break;
+	// 		case "rename":
+	// 			node.edit(); // enter builtin edit mode :contentReference[oaicite:1]{index=1}
+	// 			break;
+	// 		case "copy":
+	// 			clipboard.current = { path, cut: false };
+	// 			break;
+	// 		case "cut":
+	// 			clipboard.current = { path, cut: true };
+	// 			break;
+	// 		case "paste":
+	// 			if (clipboard.current) {
+	// 				if (clipboard.current.cut) {
+	// 					await move(clipboard.current.path, path);
+	// 				} else {
+	// 					await copy(clipboard.current.path, path);
+	// 				}
+	// 				clipboard.current = null;
+	// 				await getTree(parentPath);
+	// 			}
+	// 			break;
+	// 		case "copyPath":
+	// 			navigator.clipboard.writeText(path);
+	// 			break;
+	// 		case "copyRelPath":
+	// 			navigator.clipboard.writeText(path);
+	// 			break;
+	// 		case "delete":
+	// 			await tree.delete([path]);
+	// 			await getTree(parentPath);
+	// 			break;
+	// 	}
+	// 	setContextPos(null);
+	// };
+
+	const isFile = node.data.type === FileNodeType.File;
 
 	return (
-		<>
-			<ListItemButton
-				className={styles.treeItemButton}
-				onClick={handleSelect}
-				onContextMenu={
-					onContextMenu !== undefined
-						? (event) => onContextMenu(event, node)
-						: undefined
-				}
-				selected={
-					selectedNodeId === node.fullPath &&
-					editing !== node.fullPath
-				}
-				sx={{ pl: paddingLeft }}
-				onDoubleClick={onDoubleClick}
-			>
-				<ListItemIcon className={styles.treeItemIcon}>
-					{node.type === "directory" ? (
-						<FolderIcon />
-					) : (
-						<InsertDriveFileIcon />
-					)}
-				</ListItemIcon>
-				{editing === node.fullPath ? (
-					<InputBase
-						value={inputValue}
-						onChange={(e) => setInputValue(e.target.value)}
-						onBlur={handleBlur}
+		<div
+			ref={dragHandle}
+			style={{ ...style, width: "100%", boxSizing: "border-box" }}
+			className={`${styles.treeItem} ${
+				node.isSelected ? styles.selected : ""
+			}`}
+			onContextMenu={onContextMenu}
+			onDoubleClick={(e) => {
+				e.stopPropagation();
+				node.edit(); // start rename on dblclick :contentReference[oaicite:2]{index=2}
+			}}
+			onClick={(e) => node.handleClick(e)}
+		>
+			{/* chevron */}
+			{!isFile && (
+				<div
+					className={styles.chevron}
+					onClick={(e) => {
+						e.stopPropagation();
+						node.toggle();
+					}}
+				>
+					{node.isOpen ? <ExpandMoreIcon /> : <ChevronRightIcon />}
+				</div>
+			)}
+
+			{/* icon */}
+			<div className={styles.icon}>
+				{isFile ? <InsertDriveFileIcon /> : <FolderIcon />}
+			</div>
+
+			{/* name or edit input */}
+			<div className={styles.name}>
+				{node.isEditing ? (
+					<input
+						type="text"
+						defaultValue={node.data.name}
 						autoFocus
-						fullWidth
 						className={styles.treeItemInput}
-						inputRef={inputRef}
+						onBlur={() => node.reset()}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") node.reset();
+							if (e.key === "Enter")
+								node.submit(
+									(e.target as HTMLInputElement).value,
+								);
+						}}
 					/>
 				) : (
-					<ListItemText
-						primary={
-							<Typography
-								variant="body2"
-								className={styles.treeItemText}
-							>
-								{node.name}
-							</Typography>
-						}
-					/>
+					<span>{node.data.name}</span>
 				)}
-			</ListItemButton>
-			{expandedSet.has(node.fullPath) && node.children && (
-				<List disablePadding>
-					{node.children.map((childNode) => (
-						<TreeItem
-							key={childNode.fullPath}
-							node={childNode}
-							selectedNodeId={selectedNodeId}
-							depth={depth + 1}
-							actions={{ onContextMenu, onSelect, onRename }}
-							state={{ editing, setEditing, expandedSet, setExpandedSet }}
-						/>
+			</div>
+
+			{/* context menu */}
+			{/* {contextPos && (
+				<ul
+					className={styles.contextMenu}
+					style={{ top: contextPos.mouseY, left: contextPos.mouseX }}
+				>
+					{[
+						"open",
+						"rename",
+						"copy",
+						"cut",
+						"paste",
+						"copyPath",
+						"copyRelPath",
+						"delete",
+					].map((a) => (
+						<li key={a} onClick={() => handleAction(a)}>
+							{a === "copyPath"
+								? "Copy Path"
+								: a === "copyRelPath"
+									? "Copy Relative Path"
+									: a.charAt(0).toUpperCase() + a.slice(1)}
+						</li>
 					))}
-				</List>
-			)}
-		</>
+				</ul>
+			)} */}
+		</div>
 	);
 };
 

@@ -15,11 +15,6 @@
 	flex: 0 0 auto;
 }
 
-.loading {
-	border: 1px solid #333333;
-	padding: 10px;
-}
-
 .resizeHandleContainer {
 	position: absolute;
 	right: 0;

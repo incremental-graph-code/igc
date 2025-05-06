@@ -9,7 +9,7 @@ import styles from "./FileExplorer.module.css";
 import useStore from "@/store/store";
 import ConfigurationOverview from "./components/ConfigurationOverview";
 import path from "path-browserify";
-import FileNavigator, { FileNavigatorRef } from "./components/FileNavigator";
+import FileNavigator from "./components/FileNavigator";
 
 interface FileExplorerProps {
 	openTextDialog: (defaultName: string) => Promise<string | null>;
@@ -21,15 +21,8 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 	const [width, setWidth] = useState(300);
 	const [currentDir, setCurrentDir] = useState<string | null>(null);
 
-	const { projectDirectory } = useStore();
+	const { projectDirectory } = useStore((state) => state.projectDirectory);
 
-	const fileNavigatorRef = useRef<FileNavigatorRef | null>(null);
-
-	// If the project directory changes
-	useEffect(() => {
-		fileNavigatorRef.current?.refreshFileTree();
-		setCurrentDir(() => projectDirectory);
-	}, [projectDirectory]);
 
 	// Collapse the file explorer
 	const toggleCollapse = () => {
@@ -86,30 +79,30 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 								<button
 									className="icon-button"
 									title="Add File"
-									onClick={
-										fileNavigatorRef.current
-											?.createNewFileHandler
-									}
+									// onClick={
+									// 	fileNavigatorRef.current
+									// 		?.createNewFileHandler
+									// }
 								>
 									<AddFileIcon />
 								</button>
 								<button
 									className="icon-button"
 									title="Add Directory"
-									onClick={
-										fileNavigatorRef.current
-											?.createNewDirectoryHandler
-									}
+									// onClick={
+									// 	fileNavigatorRef.current
+									// 		?.createNewDirectoryHandler
+									// }
 								>
 									<CreateNewFolderIcon />
 								</button>
 								<button
 									className="icon-button"
 									title="Refresh"
-									onClick={
-										fileNavigatorRef.current
-											?.refreshFileTree
-									}
+									// onClick={
+									// 	fileNavigatorRef.current
+									// 		?.refreshFileTree
+									// }
 								>
 									<RefreshIcon />
 								</button>
@@ -124,7 +117,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 						</button>
 					</div>
 
-					<FileNavigator ref={fileNavigatorRef} />
+					<FileNavigator />
 					<ConfigurationOverview openTextDialog={openTextDialog} />
 				</div>
 			</ResizableBox>

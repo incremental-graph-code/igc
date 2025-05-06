@@ -1,4 +1,4 @@
-.treeItemButton {
+/* .treeItemButton {
 	background-color: transparent;
 	height: 32px;
 	padding: 4px 8px;
@@ -25,7 +25,7 @@
 	background: transparent;
 	color: var(--mui-palette-text-primary);
 	transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
-	width: calc(100% - 10px); /* Adjust width to accommodate padding */
+	width: calc(100% - 10px); /* Adjust width to accommodate padding
 }
 
 .treeItemInput:focus {
@@ -40,5 +40,74 @@
 	padding: 0;
 	margin: 0;
     padding-left: 6px;
-	font-size: 0.875rem; /* Ensure consistent font size */
+	font-size: 0.875rem; /* Ensure consistent font size
+} 
+*/
+
+/* TreeItem.module.css */
+.treeItem {
+	background: transparent;
+	height: 32px;
+	padding: 4px 8px;
+	font-size: 0.875rem;
+	display: flex;
+	align-items: center;
+	user-select: none;
+	position: absolute;
+}
+
+.treeItem:hover {
+	background-color: var(--mui-palette-background-hover);
+}
+
+.selected {
+	background-color: var(--mui-palette-background-selected);
+    border: var(--primary) solid 1px;
+}
+
+.chevron {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	cursor: pointer;
+}
+
+.icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--mui-palette-text-secondary);
+}
+
+.name {
+	flex: 1;
+	padding-left: 6px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--mui-palette-text-primary);
+}
+
+/* inline rename input */
+.treeItemInput {
+	padding: 0 5px;
+	height: 24px;
+	font-size: 0.875rem !important;
+	border: 1px solid var(--startNodeColor1);
+	border-radius: 2px;
+	outline: none;
+	background: transparent;
+	color: var(--mui-palette-text-primary);
+	transition:
+		background-color 0.3s,
+		box-shadow 0.3s,
+		border-color 0.3s;
+	width: calc(100% - 10px);
+}
+
+.treeItemInput:focus {
+	background-color: transparent;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	border-color: var(--startNodeColor1);
 }

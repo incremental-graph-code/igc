@@ -6,6 +6,8 @@ import { useThemeMode } from "@/hooks/useThemeMode";
 import { ThemeProvider } from "@mui/material/styles";
 
 import { PopupProvider } from "@/providers/Popup/PopupProvider";
+import { ContextMenuProvider } from "./ContextMenuProvider";
+import { Toaster } from "react-hot-toast";
 
 
 
@@ -25,7 +27,10 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
 		<GlobalKeyDownProvider>
             <ThemeProvider theme={theme}>
                 <PopupProvider>
-			        {children}
+                    <ContextMenuProvider>
+			            {children}
+                        <Toaster />
+                    </ContextMenuProvider>
                 </PopupProvider>
             </ThemeProvider>
 		</GlobalKeyDownProvider>
