@@ -105,9 +105,3 @@
 		border-color 0.3s;
 	width: calc(100% - 10px);
 }
-
-.treeItemInput:focus {
-	background-color: transparent;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	border-color: var(--startNodeColor1);
-}

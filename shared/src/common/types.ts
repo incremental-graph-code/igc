@@ -24,6 +24,7 @@ export interface FileNode {
 	fullPath: string;
 	type: FileNodeType;
 	children?: FileNode[];
+    isTemporary?: boolean;
 }
 export interface GetFileTreeRequest {
 	path: string;

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React from "react";
 import { NodeRendererProps } from "react-arborist";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -11,7 +11,13 @@ import { FileNode, FileNodeType } from "shared";
 import { ContextMenuItem } from "@/providers/ContextMenuProvider";
 import { useContextMenu } from "@/hooks/useContextMenu";
 import useStore from "@/store/store";
-import { copyFileOrDirectory, renameFileOrDirectory } from "@/requests";
+import {
+	copyFileOrDirectory,
+	createNewDirectory,
+	createNewFile,
+	deleteFileOrDirectory,
+	renameFileOrDirectory,
+} from "@/requests";
 import path from "path-browserify";
 
 type Action =
@@ -27,13 +33,23 @@ type Action =
 const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 	node,
 	style,
-	tree,
 	dragHandle,
 }) => {
-    // PUT THIS IN A STORE
-    const [clipboard, setClipboard] = useState<{ path: string; cut: boolean } | null>(null);
+	const {
+		projectDirectory,
+		refresh,
+		clipboard,
+		setClipboard,
+		removeTempNodes,
+	} = useStore((state) => ({
+		projectDirectory: state.projectDirectory,
+		refresh: state.refresh,
+		clipboard: state.clipboard,
+		setClipboard: state.setClipboard,
+		removeTempNodes: state.removeTempNodes,
+	}));
 
-	const projectDirectory = useStore((state) => state.projectDirectory);
+	const type = node.data.type === FileNodeType.File ? "file" : "directory";
 
 	const menuItems: ContextMenuItem<Action>[] = [
 		{
@@ -49,6 +65,7 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 			id: "rename",
 			label: "Rename",
 			onClick: () => {
+				node.select();
 				node.edit();
 			},
 			separator: true,
@@ -57,14 +74,26 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 			id: "copy",
 			label: "Copy",
 			onClick: () => {
-				setClipboard({ path: node.data.fullPath, cut: false });
+				setClipboard(() => {
+					return { path: node.data.fullPath, cut: false };
+				});
+				toast.success(`Copied ${type}.`, {
+					duration: 2000,
+					position: "top-center",
+				});
 			},
 		},
 		{
 			id: "cut",
 			label: "Cut",
 			onClick: () => {
-				setClipboard({ path: node.data.fullPath, cut: true });
+				setClipboard(() => {
+					return { path: node.data.fullPath, cut: true };
+				});
+				toast.success(`Cut ${type}.`, {
+					duration: 2000,
+					position: "top-center",
+				});
 			},
 		},
 		{
@@ -79,18 +108,24 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 						// If it is a file, get the parent directory
 						pastePath = node.parent?.data.fullPath ?? "";
 					}
-                    // Add the file name to the path
-                    pastePath = path.join(
-                        pastePath,
-                        path.basename(clipboard.path),
-                    );
+					// Add the file name to the path
+					pastePath = path.join(
+						pastePath,
+						path.basename(clipboard.path),
+					);
 
 					if (clipboard.cut) {
 						await renameFileOrDirectory(clipboard.path, pastePath);
 					} else {
 						await copyFileOrDirectory(clipboard.path, pastePath);
 					}
-					setClipboard(null);
+					setClipboard(() => null);
+
+					toast.success(`Pasted ${type}.`, {
+						duration: 2000,
+						position: "top-center",
+					});
+					refresh(projectDirectory);
 				}
 			},
 			separator: true,
@@ -101,7 +136,7 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 			onClick: () => {
 				const path = node.data.fullPath;
 				copyToClipboard(path);
-				toast.success("Copied path to clipboard", {
+				toast.success("Copied path to clipboard.", {
 					duration: 2000,
 					position: "top-center",
 				});
@@ -120,7 +155,7 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 						? path.replace(/^\/|^\.\//, "")
 						: path;
 				copyToClipboard(relativePath);
-				toast.success("Copied relative path to clipboard", {
+				toast.success("Copied relative path to clipboard.", {
 					duration: 2000,
 					position: "top-center",
 				});
@@ -130,8 +165,24 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 		{
 			id: "delete",
 			label: "Delete",
-			onClick: (id) => console.log("Action:", id),
-			disabled: true,
+			onClick: async () => {
+				const path = node.data.fullPath;
+				deleteFileOrDirectory(path)
+					.then(() => {
+						toast.success(`Deleted ${type}.`, {
+							duration: 2000,
+							position: "top-center",
+						});
+						refresh(projectDirectory);
+					})
+					.catch((err) => {
+						toast.error(`Error deleting ${type}\n${err}.`, {
+							duration: 2000,
+							position: "top-center",
+						});
+					});
+			},
+			disabled: false,
 		},
 	];
 
@@ -207,6 +258,13 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 	// };
 
 	const isFile = node.data.type === FileNodeType.File;
+    if (node.data.isTemporary) {
+        style.backgroundColor = "rgba(255, 255, 0, 0.2)";
+        if(!node.isEditing){
+            node.select();
+            node.edit();
+        }
+    }
 
 	return (
 		<div
@@ -242,19 +300,52 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 
 			{/* name or edit input */}
 			<div className={styles.name}>
-				{node.isEditing ? (
+				{node.isEditing || node.data.isTemporary ? (
 					<input
 						type="text"
 						defaultValue={node.data.name}
 						autoFocus
 						className={styles.treeItemInput}
-						onBlur={() => node.reset()}
-						onKeyDown={(e) => {
-							if (e.key === "Escape") node.reset();
-							if (e.key === "Enter")
-								node.submit(
-									(e.target as HTMLInputElement).value,
-								);
+						onBlur={() => {
+							node.reset();
+							removeTempNodes();
+						}}
+						onKeyDown={async (e) => {
+							if (e.key === "Escape") {
+								node.reset();
+                                removeTempNodes();
+							}
+							if (e.key === "Enter") {
+								if (node.data.isTemporary) {
+									if (node.data.type === FileNodeType.File) {
+										await createNewFile(
+											path.join(
+												path.dirname(
+													node.data.fullPath,
+												),
+												(e.target as HTMLInputElement)
+													.value,
+											),
+										);
+									} else {
+										await createNewDirectory(
+											path.join(
+												path.dirname(
+													node.data.fullPath,
+												),
+												(e.target as HTMLInputElement)
+													.value,
+											),
+										);
+									}
+                                    refresh(projectDirectory);
+								}
+                                else{
+                                    node.submit(
+                                        (e.target as HTMLInputElement).value,
+                                    );
+                                }
+							}
 						}}
 					/>
 				) : (

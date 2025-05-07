@@ -21,8 +21,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 	const [width, setWidth] = useState(300);
 	const [currentDir, setCurrentDir] = useState<string | null>(null);
 
-	const { projectDirectory } = useStore((state) => state.projectDirectory);
-
+	const { projectDirectory, refresh, createTempNode, selectedNode } =
+		useStore((state) => ({
+			projectDirectory: state.projectDirectory,
+			refresh: state.refresh,
+			createTempNode: state.createTempNode,
+			selectedNode: state.selectedNode,
+		}));
 
 	// Collapse the file explorer
 	const toggleCollapse = () => {
@@ -79,30 +84,21 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 								<button
 									className="icon-button"
 									title="Add File"
-									// onClick={
-									// 	fileNavigatorRef.current
-									// 		?.createNewFileHandler
-									// }
+									onClick={() => createTempNode(false)}
 								>
 									<AddFileIcon />
 								</button>
 								<button
 									className="icon-button"
 									title="Add Directory"
-									// onClick={
-									// 	fileNavigatorRef.current
-									// 		?.createNewDirectoryHandler
-									// }
+									onClick={() => createTempNode(true)}
 								>
 									<CreateNewFolderIcon />
 								</button>
 								<button
 									className="icon-button"
 									title="Refresh"
-									// onClick={
-									// 	fileNavigatorRef.current
-									// 		?.refreshFileTree
-									// }
+									onClick={() => refresh(projectDirectory)}
 								>
 									<RefreshIcon />
 								</button>
