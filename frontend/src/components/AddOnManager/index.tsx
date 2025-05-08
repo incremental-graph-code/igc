@@ -65,11 +65,15 @@ const AddOnManager: React.FC<AddOnManagerProps> = ({ onClose }) => {
 			.map((component: ModuleComponentValues<any>) => (
 				<li
 					key={`${component.modulePath}~${component.object.key}`}
-					className={`${styles.listItem} ${
+					className={`
+       ${styles.listItem}
+       ${
 						component.enabled ? "" : styles.disabled
-					} ${
+					}
+       ${
 						selectedItems.includes(component) ? styles.selected : ""
-					}`}
+					}
+     `}
 					onClick={() => toggleSelection(component)}
 				>
 					{component.object.key}
@@ -191,11 +195,14 @@ const AddOnManager: React.FC<AddOnManagerProps> = ({ onClose }) => {
 				{/* Enable/Disable Selected */}
 				{selectedItems.length > 0 && (
 					<button
-						className={`${styles.toggleBtn} ${
+						className={`
+        ${styles.toggleBtn}
+        ${
 							selectedItems.length > 0 && selectedItems[0].enabled
 								? styles.disableBtn
 								: styles.enableBtn
-						}`}
+						}
+      `}
 						onClick={toggleEnableDisable}
 						disabled={selectedItems.length === 0}
 					>

@@ -72,7 +72,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
 	return (
 		<div
-			className={`${styles.customSelectContainer} ${className}`}
+			className={`
+     ${styles.customSelectContainer}
+     ${className}
+   `}
 			ref={selectRef}
 			style={style}
 		>
@@ -84,9 +87,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
 			<div
 				id={id}
-				className={`${styles.customSelect} ${
+				className={`
+      ${styles.customSelect}
+      ${
 					disabled ? styles.disabled : ""
-				}`}
+				}
+    `}
 				onClick={() => !disabled && setIsOpen(!isOpen)}
 			>
 				{options.find((option) => option.value === value)?.label ||

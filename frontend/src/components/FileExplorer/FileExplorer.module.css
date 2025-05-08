@@ -1,7 +1,6 @@
 .fileExplorerContainer {
 	display: flex;
-	overflow: hidden;
-}
+    }
 
 .fileExplorer {
 	display: flex;

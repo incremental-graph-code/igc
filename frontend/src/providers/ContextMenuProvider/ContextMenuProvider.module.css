@@ -20,7 +20,7 @@
 }
 
 .item:not(.disabled):hover {
-	background: var(--mui-palette-background-hover);;
+	background: var(--mui-palette-background-hover);
 	cursor: pointer;
 }
 .divider {

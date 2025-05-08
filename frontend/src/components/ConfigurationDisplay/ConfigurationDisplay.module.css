@@ -1,6 +1,6 @@
 .container {
-	overflow-y: auto;
 	height: 100%;
+	overflow-y: auto;
 	background-color: var(--mui-palette-background-paper);
 	color: var(--mui-palette-text-primary);
 	padding: 5px;

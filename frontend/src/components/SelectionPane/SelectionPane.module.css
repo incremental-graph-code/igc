@@ -95,21 +95,21 @@
 }
 
 .selection-pane-edge-overrides {
-	background-color: var(--overridesRelationshipColor);;
+	background-color: var(--overridesRelationshipColor);
 	color: #000000;
 }
 
 .selection-pane-edge-method {
-	background-color: var(--methodRelationshipColor);;
+	background-color: var(--methodRelationshipColor);
 	color: #ffffff;
 }
 
 .selection-pane-edge-execution {
-	background-color: var(--executionRelationshipColor);;
+	background-color: var(--executionRelationshipColor);
 	color: #ffffff;
 }
 
 .selection-pane-edge-dependency {
-	background-color: var(--dependencyRelationshipColor);;
+	background-color: var(--dependencyRelationshipColor);
 	color: #000000;
 }

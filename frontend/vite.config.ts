@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import tailwindcss from "@tailwindcss/vite";
 import * as path from "path";
 
 export default defineConfig({
-	plugins: [react()],
-    envDir: "../",
+	plugins: [react(), tailwindcss()],
+	envDir: "../",
 	base: "./",
 	build: {
 		outDir: "dist",

@@ -270,9 +270,12 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 		<div
 			ref={dragHandle}
 			style={{ ...style, width: "100%", boxSizing: "border-box" }}
-			className={`${styles.treeItem} ${
+			className={`
+     ${styles.treeItem}
+     ${
 				node.isSelected ? styles.selected : ""
-			}`}
+			}
+   `}
 			onContextMenu={onContextMenu}
 			onDoubleClick={(e) => {
 				e.stopPropagation();

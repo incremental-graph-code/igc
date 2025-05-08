@@ -111,9 +111,14 @@ const FilterPane: React.FC = () => {
 						].map((relationshipType) => (
 							<MenuItem
 								key={relationshipType}
-								className={`${styles.filterPaneMenuItem} ${
-									styles[`filterPane${relationshipType}`]
-								}`} // Apply the filterPaneMenuItem and relationship-specific styles
+								className={`
+          ${styles.filterPaneMenuItem}
+          ${
+									styles[`
+           filterPane${relationshipType}
+         `]
+								}
+        `} // Apply the filterPaneMenuItem and relationship-specific styles
 							>
 								<div className={styles.filterPaneColor} />{" "}
 								{/* Apply the filterPaneColor styles */}

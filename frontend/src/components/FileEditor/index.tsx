@@ -267,12 +267,18 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 		>
 			<div className="file-editor-container">
 				<div
-					className={`file-editor ${isCollapsed ? "collapsed" : ""}`}
+					className={`
+       file-editor
+       ${isCollapsed ? "collapsed" : ""}
+     `}
 				>
 					<div
-						className={`navbar-component ${
+						className={`
+        navbar-component
+        ${
 							isCollapsed ? "collapsed" : ""
-						}`}
+						}
+      `}
 					>
 						{!isCollapsed && (
 							<>

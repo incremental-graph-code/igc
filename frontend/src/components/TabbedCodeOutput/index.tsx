@@ -147,17 +147,23 @@ const TabbedCodeOutput: React.FC<TabbedCodeOutputProps> = ({
 					ref={(el: HTMLDivElement | null) =>
 						(terminalRefs.current[0] = el)
 					}
-					className={`tabbed-code-output-terminal ${
+					className={`
+       tabbed-code-output-terminal
+       ${
 						activeTab === 0 ? "" : "hidden"
-					}`}
+					}
+     `}
 				/>
 				<Box
 					ref={(el: HTMLDivElement | null) =>
 						(terminalRefs.current[1] = el)
 					}
-					className={`tabbed-code-output-terminal ${
+					className={`
+       tabbed-code-output-terminal
+       ${
 						activeTab === 1 ? "" : "hidden"
-					}`}
+					}
+     `}
 				/>
 				{activeTab === 2 && (
 					<ConfigurationDisplay

@@ -1,6 +1,6 @@
 .tabsContainer {
     white-space: nowrap;
-    background-color: var(--mui-palette-background-default);;
+    background-color: var(--mui-palette-background-default);
 }
 .tabs .MuiList-root .MuiTouchRipple-child {
     background-color: red;

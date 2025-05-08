@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
 import AppRouter from "./routes";
+
 import "./index.css";
 import { injectCSSVariables } from "./styles/injectStyles";
 

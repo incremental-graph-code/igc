@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CustomSelect, { SelectOption } from "../CustomSelect";
-import "./SelectionPane.css";
+import "./SelectionPane.module.css";
 import useStore from "@/store/store";
 // import { applyEdgeChanges } from "reactflow";
 // import {

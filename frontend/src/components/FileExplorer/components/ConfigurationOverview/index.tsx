@@ -41,10 +41,9 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 	useEffect(() => {
 		if (isIGCFile) {
 			setSelectedSessionId(currentSessionId);
+		} else {
+			setSelectedSessionId(null);
 		}
-        else{
-            setSelectedSessionId(null);
-        }
 	}, [currentSessionId, isIGCFile]);
 
 	const handleSessionChange = (value: string) => {
@@ -57,47 +56,53 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 		});
 	};
 
-    const handleStartNewSession = async () => {
-        const defaultSessionName = `IGC_${new Intl.DateTimeFormat("en-GB", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-        })
-            .format(new Date())
-            .replace(/,/, "")
-            .replace(/\//g, "-")
-            .replace(" ", "_")}`;
-    
-        const sessionName = await openTextDialog(defaultSessionName);
-        if (sessionName && selectedFile !== null) {
-            createNewSession(selectedFile, sessionName).then(() => {
-                loadSessionData(selectedFile).then(() => {
-                    setCurrentSessionId(() => sessionName);
-                    useStore.getState().setEdges(selectedFile, (prevEdges) =>
-                        prevEdges.filter(
-                            (edge) => edge.type !== "ExecutionRelationship",
-                        ),
-                    );
-                });
-            });
-        }
-    };
-    const handleDeleteSession = async () => {
-        if (selectedFile === null || selectedSessionId === null || selectedSessionId === "") {
-            return;
-        }
-        const sessionName = selectedSessionId;
-        await deleteSession(selectedFile, sessionName);
-        
-        loadSessionData(selectedFile).then((sessionData) => {
-            setCurrentSessionId(() => sessionData.primarySession);
-            updateExecutionRelationships(selectedFile, sessionData);
-        });
-    };
+	const handleStartNewSession = async () => {
+		const defaultSessionName = `IGC_${new Intl.DateTimeFormat("en-GB", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hour12: false,
+		})
+			.format(new Date())
+			.replace(/,/, "")
+			.replace(/\//g, "-")
+			.replace(" ", "_")}`;
+
+		const sessionName = await openTextDialog(defaultSessionName);
+		if (sessionName && selectedFile !== null) {
+			createNewSession(selectedFile, sessionName).then(() => {
+				loadSessionData(selectedFile).then(() => {
+					setCurrentSessionId(() => sessionName);
+					useStore
+						.getState()
+						.setEdges(selectedFile, (prevEdges) =>
+							prevEdges.filter(
+								(edge) => edge.type !== "ExecutionRelationship",
+							),
+						);
+				});
+			});
+		}
+	};
+	const handleDeleteSession = async () => {
+		if (
+			selectedFile === null ||
+			selectedSessionId === null ||
+			selectedSessionId === ""
+		) {
+			return;
+		}
+		const sessionName = selectedSessionId;
+		await deleteSession(selectedFile, sessionName);
+
+		loadSessionData(selectedFile).then((sessionData) => {
+			setCurrentSessionId(() => sessionData.primarySession);
+			updateExecutionRelationships(selectedFile, sessionData);
+		});
+	};
 
 	useEffect(() => {
 		if (selectedFile === null) {
@@ -110,7 +115,11 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 	}, [selectedFile]);
 
 	return (
-		<Box className={styles.configurationOverview}>
+		<div className={`
+    box-border flex h-full min-h-[250px] w-full flex-col items-center border-t-[5px]
+    border-t-[var(--mui-palette-background-pure)] bg-[var(--mui-palette-background-paper)] p-4
+    text-[var(--mui-palette-text-primary)]
+  `}>
 			<Typography
 				variant="h6"
 				className={styles.configurationOverviewTitle}
@@ -125,9 +134,6 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 					sx={{ backgroundColor: STYLES.primary }}
 					disabled={selectedFile === null}
 				>
-					{/* {selectedSessionId === null
-                            ? "New Session Active"
-                            : "Start New Session"} */}
 					Start New Session
 				</Button>
 				<CustomSelect
@@ -147,20 +153,28 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 					data={sessionData[selectedSessionId]?.overallConfiguration}
 				/>
 			) : (
-				<Typography className={styles.configurationPlaceholder}>
+				<Typography
+					className={
+						"mt-4 flex-grow text-center text-[var(--mui-palette-text-secondary)]"
+					}
+				>
 					No Configurations
 				</Typography>
 			)}
-            <Button
-					variant="contained"
-					onClick={handleDeleteSession}
-					className={styles.configurationOverviewButton}
-					sx={{ backgroundColor: STYLES.nodeErrorColor }}
-					disabled={currentSessionId === null || selectedSessionId === null || selectedSessionId === ""}
-				>
-					Delete Session
-				</Button>
-		</Box>
+			<Button
+				variant="contained"
+				onClick={handleDeleteSession}
+				className={styles.configurationOverviewButton}
+				sx={{ backgroundColor: STYLES.nodeErrorColor }}
+				disabled={
+					currentSessionId === null ||
+					selectedSessionId === null ||
+					selectedSessionId === ""
+				}
+			>
+				Delete Session
+			</Button>
+		</div>
 	);
 };
 

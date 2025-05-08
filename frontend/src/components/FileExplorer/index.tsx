@@ -10,6 +10,7 @@ import useStore from "@/store/store";
 import ConfigurationOverview from "./components/ConfigurationOverview";
 import path from "path-browserify";
 import FileNavigator from "./components/FileNavigator";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 interface FileExplorerProps {
 	openTextDialog: (defaultName: string) => Promise<string | null>;
@@ -66,9 +67,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 					style={{ width: isCollapsed ? 40 : width }}
 				>
 					<div
-						className={`navbar-component ${
+						className={`
+        navbar-component
+        ${
 							isCollapsed ? "collapsed" : ""
-						}`}
+						}
+      `}
 					>
 						{!isCollapsed && (
 							<>
@@ -113,8 +117,17 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ openTextDialog }) => {
 						</button>
 					</div>
 
-					<FileNavigator />
-					<ConfigurationOverview openTextDialog={openTextDialog} />
+					<PanelGroup direction="vertical">
+						<Panel maxSize={75} defaultSize={50}>
+							<FileNavigator />
+						</Panel>
+						<PanelResizeHandle />
+						<Panel maxSize={75} minSize={30}>
+							<ConfigurationOverview
+								openTextDialog={openTextDialog}
+							/>
+						</Panel>
+					</PanelGroup>
 				</div>
 			</ResizableBox>
 		</div>

@@ -8,7 +8,11 @@
 
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { FileNode } from "shared";
-import { deleteFileOrDirectory, getFileTree, renameFileOrDirectory } from "@/requests";
+import {
+	deleteFileOrDirectory,
+	getFileTree,
+	renameFileOrDirectory,
+} from "@/requests";
 import useStore from "@/store/store";
 
 import styles from "./FileNavigator.module.css";
@@ -32,13 +36,15 @@ const STORAGE_KEY = "IGC.treeOpenState";
  */
 const FileNavigator: FC = () => {
 	const projectDirectory = useStore((state) => state.projectDirectory);
-	const { fileTree, loading, error, refresh, setSelectedNode } = useStore((state) => ({
-		fileTree: state.fileTree,
-		loading: state.loading,
-		error: state.error,
-		refresh: state.refresh,
-        setSelectedNode: state.setSelectedNode,
-	}));
+	const { fileTree, loading, error, refresh, setSelectedNode } = useStore(
+		(state) => ({
+			fileTree: state.fileTree,
+			loading: state.loading,
+			error: state.error,
+			refresh: state.refresh,
+			setSelectedNode: state.setSelectedNode,
+		}),
+	);
 
 	const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => {
 		try {
@@ -77,53 +83,60 @@ const FileNavigator: FC = () => {
 		return <div>Error: {error}</div>;
 	}
 	return (
-		<div ref={parentRef}>
+		<div
+			ref={parentRef}
+			style={{
+				height: "100%",
+				minHeight: 0,
+				overflow: "auto",
+				boxSizing: "border-box",
+			}}
+		>
 			<Tree
 				openByDefault={false}
 				initialOpenState={openMap}
 				onToggle={handleToggle}
-				width={size?.width}
-				height={size?.height}
+				width={"100%"}
 				data={fileTree}
 				idAccessor="fullPath"
 				renderRow={TreeRow}
 				onMove={
 					async ({ dragIds, parentId, index }) => {
-                        // Move each dragged item to the new parent
+						// Move each dragged item to the new parent
 						console.log("move", dragIds, parentId, index);
 						await Promise.all(
 							dragIds.map(async (id) => {
-                                let newPath = `${parentId}/${path.basename(id)}`;
-                                if (parentId === null) {
-                                    newPath = `${projectDirectory}/${path.basename(id)}`;
-                                }
+								let newPath = `${parentId}/${path.basename(id)}`;
+								if (parentId === null) {
+									newPath = `${projectDirectory}/${path.basename(id)}`;
+								}
 								console.log("Moving", id, "to", newPath);
 								await renameFileOrDirectory(id, newPath);
 							}),
 						);
 
-                        // Refresh the file tree after moving
-                        refresh(projectDirectory);
-                        toast.success("Moved file(s) successfully", {
-                            duration: 2000,
-                            position: "top-center",
-                        });
+						// Refresh the file tree after moving
+						refresh(projectDirectory);
+						toast.success("Moved file(s) successfully", {
+							duration: 2000,
+							position: "top-center",
+						});
 					}
 					//move(dragIds[0], parentId)
 				}
 				onRename={
 					async ({ id, name }) => {
 						console.log("rename", id, name);
-                        // Get the new path with the new name
-                        const newPath = path.join(path.dirname(id), name);
-                        // Rename the file
-                        await renameFileOrDirectory(id, newPath)
-                        // Refresh the file tree after moving
-                        refresh(projectDirectory);
-                        toast.success("Renamed file successfully", {
-                            duration: 2000,
-                            position: "top-center",
-                        });
+						// Get the new path with the new name
+						const newPath = path.join(path.dirname(id), name);
+						// Rename the file
+						await renameFileOrDirectory(id, newPath);
+						// Refresh the file tree after moving
+						refresh(projectDirectory);
+						toast.success("Renamed file successfully", {
+							duration: 2000,
+							position: "top-center",
+						});
 					}
 					//move(id, `${path.dirname(id)}/${name}`)
 				}
@@ -131,42 +144,43 @@ const FileNavigator: FC = () => {
 				// 	/* optional: call your create API */
 				// }}
 				onDelete={async ({ ids }) => {
-                    console.log("delete", ids);
-                    await Promise.all(
-                        ids.map(async (id) => {
-                            console.log("Deleting", id);
-                            //await deleteFileOrDirectory(id);
-                        }),
-                    ).then(() => {
-						toast.success(`Deleted File.`, {
-							duration: 2000,
-							position: "top-center",
+					console.log("delete", ids);
+					await Promise.all(
+						ids.map(async (id) => {
+							console.log("Deleting", id);
+							//await deleteFileOrDirectory(id);
+						}),
+					)
+						.then(() => {
+							toast.success(`Deleted File.`, {
+								duration: 2000,
+								position: "top-center",
+							});
+							refresh(projectDirectory);
+						})
+						.catch((err) => {
+							toast.error(`Error deleting File\n${err}.`, {
+								duration: 2000,
+								position: "top-center",
+							});
 						});
-                        refresh(projectDirectory);
-					})
-					.catch((err) => {
-						toast.error(`Error deleting File\n${err}.`, {
-							duration: 2000,
-							position: "top-center",
-						});
-					});
 				}}
-                onFocus={({ id }) => {
-                    console.log("focus", id);
-                    
-                    // setSelectedFile(id);
-                }}
-                onSelect={(nodes) => {
-                    console.log("select", nodes);
-                    if (nodes.length > 0) {
-                        const selectedNode = nodes[0];
-                        console.log("Selected node:", selectedNode.id);
-                        setSelectedNode(selectedNode);
-                    } else {
-                        console.log("No nodes selected");
-                        setSelectedNode(null);
-                    }
-                }}
+				onFocus={({ id }) => {
+					console.log("focus", id);
+
+					// setSelectedFile(id);
+				}}
+				onSelect={(nodes) => {
+					console.log("select", nodes);
+					if (nodes.length > 0) {
+						const selectedNode = nodes[0];
+						console.log("Selected node:", selectedNode.id);
+						setSelectedNode(selectedNode);
+					} else {
+						console.log("No nodes selected");
+						setSelectedNode(null);
+					}
+				}}
 				rowHeight={32}
 				indent={16}
 			>

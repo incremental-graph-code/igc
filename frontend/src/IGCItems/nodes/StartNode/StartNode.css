@@ -6,7 +6,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(45deg, var(--startNodeColor1), var(--startNodeColor2));;
+	background: linear-gradient(45deg, var(--startNodeColor1), var(--startNodeColor2));
 	box-shadow: 0 0 10px 0 rgba(var(--startNodeColor), 0.7);
     background-color: #00f2ff;
     cursor: grab;
