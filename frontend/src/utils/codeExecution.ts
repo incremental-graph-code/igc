@@ -25,7 +25,7 @@ export const runAnalysis = (node: Node) => {
 	if (isCodeNode(node)) {
 		callAnalyze(node.data.codeData.code).then(
 			(response: CodeAnalysisResponse) => {
-				useStore.getState().setNodes(selectedFile, (prevNodes) => {
+				useStore.getState().sNodes(selectedFile, (prevNodes) => {
 					return prevNodes.map((n) => {
 						if (node.id === n.id) {
 							if (
@@ -82,7 +82,7 @@ export const runAllAnalysis = async () => {
 		}
 	}
 
-	useStore.getState().setNodes(selectedFile, (prevNodes) => {
+	useStore.getState().sNodes(selectedFile, (prevNodes) => {
 		return prevNodes.map((node) => {
 			if (node.id in nodeAnalysisData && isCodeNode(node)) {
 				node.data.codeData = {
@@ -235,7 +235,7 @@ const applyCodeAnalysis = (
 	if (selectedFile === null) {
 		return;
 	}
-	useStore.getState().setNodes(selectedFile, (prevNodes) => {
+	useStore.getState().sNodes(selectedFile, (prevNodes) => {
 		return prevNodes.map((node) => {
 			if (node.id === nodeId) {
 				return metaAnalysis(node, metaNodeData);
@@ -284,7 +284,7 @@ export const runCode = (code: string, nodeId: string, scope?: string): void => {
 			// 		executionPath.push(nodeId);
 			// 	}
 			// 	// Create a new edge for the execution path
-			// 	useStore.getState().setEdges(selectedFile, (eds) => {
+			// 	useStore.getState().sEdges(selectedFile, (eds) => {
 			// 		const params = {
 			// 			source: executionPath[executionPath.length - 2],
 			// 			target: nodeId,

@@ -7,12 +7,12 @@ import { createComponent } from "@/utils/componentCache";
 import { RegistryComponent } from "@/types/frontend";
 
 const RawStartNode: IGCNodeProps = () => {
-	const { setNodes, setEdges } = useStore();
+	const { sNodes, sEdges } = useStore();
 	// Override single click and unselect all nodes
 	const onNodeClick = (event: React.MouseEvent<HTMLElement>) => {
 		event.stopPropagation(); // Prevent the default single click behavior
 		// Deselect All Nodes and Edges
-		setNodes((nodes) => {
+		sNodes((nodes) => {
 			const newNodes = nodes.map((node) => {
 				node.selected = false;
 				return node;
@@ -20,7 +20,7 @@ const RawStartNode: IGCNodeProps = () => {
 			return [...newNodes];
 		});
 
-		setEdges((edges) => {
+		sEdges((edges) => {
 			const newEdges = edges.map((edge) => {
 				edge.selected = false;
 				return edge;

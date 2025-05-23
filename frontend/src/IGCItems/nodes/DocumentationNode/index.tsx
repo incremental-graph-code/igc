@@ -48,7 +48,7 @@ export const showRelevantDocumentation = (node: Node | null): void => {
         return;
     }
     if (node === null) {
-        useStore.getState().setNodes(curFile, (prevNodes) =>
+        useStore.getState().sNodes(curFile, (prevNodes) =>
             prevNodes.map((n) => {
                 if (isDocumentationNode(n)) {
                     n.hidden = true;
@@ -58,7 +58,7 @@ export const showRelevantDocumentation = (node: Node | null): void => {
         );
         return;
     }
-    useStore.getState().setNodes(curFile, (prevNodes) => {
+    useStore.getState().sNodes(curFile, (prevNodes) => {
         const nodesToShow: string[] = [];
         if (isDocumentationNode(node)) {
             nodesToShow.push(node.id);

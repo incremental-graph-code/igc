@@ -21,8 +21,8 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 	const selectedItems = useStore((state) => state.selectedItems);
 	const selectedItem = useStore((state) => state.selectedItem);
 	const setSelectedItem = useStore((state) => state.setSelectedItem);
-	const setNodes = useStore((state) => state.setNodes);
-	const setEdges = useStore((state) => state.setEdges);
+	const sNodes = useStore((state) => state.sNodes);
+	const sEdges = useStore((state) => state.sEdges);
 	const nodeTypes = useStore((state) => state.nodeTypes);
 	const relationshipTypes = useStore((state) => state.relationshipTypes);
 
@@ -56,7 +56,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 		setSelectedOption(value);
 		if (selectedItem) {
 			if (selectedItem.item.type === "node") {
-				setNodes(selectedFile, (prevNodes) =>
+				sNodes(selectedFile, (prevNodes) =>
 					prevNodes.map((node) => {
 						if (node.id === selectedItem.id) {
 							return {
@@ -68,7 +68,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 					}),
 				);
 			} else if (selectedItem.item.type === "relationship") {
-				setEdges(selectedFile, (prevEdges) =>
+				sEdges(selectedFile, (prevEdges) =>
 					prevEdges.map((edge) => {
 						if (edge.id === selectedItem.id) {
 							return {
@@ -87,7 +87,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setName(event.target.value);
 		if (selectedItem) {
-			setNodes(selectedFile, (prevNodes) =>
+			sNodes(selectedFile, (prevNodes) =>
 				prevNodes.map((node) => {
 					if (node.id === selectedItem.id) {
 						return {
@@ -109,7 +109,7 @@ const SelectionPane: React.FC<SelectionPaneProps> = ({}) => {
 		if (selectedItem) {
 			if (selectedItem.item.type === "node") {
 				removeNodeInSession(selectedFile, selectedItem.id);
-				setNodes(selectedFile, (prevNodes) =>
+				sNodes(selectedFile, (prevNodes) =>
 					prevNodes.filter((node) => node.id !== selectedItem.id),
 				);
 			} else if (

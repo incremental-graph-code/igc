@@ -36,7 +36,7 @@ export const RawCodeNode: IGCCodeNodeProps = (props) => {
 		}
 
 		// // Select the node
-		// setNodes((prevNodes) => {
+		// sNodes((prevNodes) => {
 		// 	return prevNodes.map((node) => {
 		// 		node.selected = node.id === id;
 		// 		return node;
@@ -44,7 +44,7 @@ export const RawCodeNode: IGCCodeNodeProps = (props) => {
 		// });
 
 		// // Deselect all edges
-		// setEdges((prevEdges) => {
+		// sEdges((prevEdges) => {
 		// 	return prevEdges.map((edge) => {
 		// 		edge.selected = false;
 		// 		return edge;

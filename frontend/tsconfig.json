@@ -1,14 +1,15 @@
 {
 	"extends": "../config/tsconfig/browser.json",
 	"compilerOptions": {
-        "target": "ES2024",
+		"target": "ES2024",
 		"outDir": "dist",
 		"composite": true,
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["src/*"],
 			"@components/*": ["src/components/*"]
-		}
+		},
+		"esModuleInterop": true
 	},
 	"include": ["src"]
 }

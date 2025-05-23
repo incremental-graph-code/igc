@@ -27,7 +27,7 @@ const FilterPane: React.FC = () => {
 		Dependency: true,
 	});
 
-	const { setEdges } = useStore();
+	const { sEdges } = useStore();
 
 	const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorEl(anchorEl ? null : event.currentTarget);
@@ -56,7 +56,7 @@ const FilterPane: React.FC = () => {
 		relationshipType: string,
 		visible: boolean,
 	) => {
-		setEdges((prevEdges) => {
+		sEdges((prevEdges) => {
 			const newEdges = prevEdges.map((edge) => {
 				if (relationshipType === edge.type) {
 					edge.hidden = !visible;

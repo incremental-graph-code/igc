@@ -3,10 +3,7 @@ import ReactMarkdown from "react-markdown";
 import AddIcon from "@mui/icons-material/Add";
 import styles from "./MarkdownDisplay.module.css";
 import { Node, Edge } from "reactflow";
-import {
-	getEdgeId,
-	getIncomingNodes,
-} from "../../IGCItems/utils/utils";
+import { getEdgeId, getIncomingNodes } from "../../IGCItems/utils/utils";
 import useStore from "@/store/store";
 import { isDocumentationNode } from "@/IGCItems/nodes/DocumentationNode";
 
@@ -18,20 +15,18 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ node }) => {
 	const handleDoubleClick = () => {
 		setOrCreateDocumentationNode(node);
 	};
-	const getCodeDocumentation = (
-		node: Node,
-	): string | null => {
-        const selectedFile = useStore.getState().selectedFile;
-        if (selectedFile === null) {
-            return null;
-        }
-        const nodes = useStore.getState().getNodes(selectedFile);
-        const edges = useStore.getState().getEdges(selectedFile);
+
+	const getCodeDocumentation = (node: Node): string | null => {
+		const selectedFile = useStore.getState().fileData.filePath;
+		if (selectedFile === null) {
+			return null;
+		}
+		const graph = useStore.getState().graph;
 		const incomingDocumentationNodes = getIncomingNodes(
 			node.id,
-			nodes,
-			edges,
-            (node) => isDocumentationNode(node),
+			graph.nodes,
+			graph.relationships,
+			(node) => isDocumentationNode(node),
 		);
 		if (incomingDocumentationNodes.length === 0) {
 			return null;
@@ -39,20 +34,17 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ node }) => {
 		return incomingDocumentationNodes[0].data.documentation;
 	};
 
-	const setOrCreateDocumentationNode = (
-		node: Node,
-	): void => {
-        const selectedFile = useStore.getState().selectedFile;
-        if (selectedFile === null) {
-            return;
-        }
-        const nodes = useStore.getState().getNodes(selectedFile);
-        const edges = useStore.getState().getEdges(selectedFile);
+	const setOrCreateDocumentationNode = (node: Node): void => {
+		const selectedFile = useStore.getState().fileData.filePath;
+		if (selectedFile === null) {
+			return;
+		}
+		const graph = useStore.getState().graph;
 		const incomingDocumentationNodes = getIncomingNodes(
 			node.id,
-			nodes,
-			edges,
-            (node) => isDocumentationNode(node),
+			graph.nodes,
+			graph.relationships,
+			(node) => isDocumentationNode(node),
 		);
 		if (incomingDocumentationNodes.length === 0) {
 			// Need to create the documentation node
@@ -72,21 +64,30 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ node }) => {
 				selected: true,
 			};
 			const documentationEdge = {
-				id: getEdgeId(documentationNodeId, node.id, edges),
+				id: getEdgeId(
+					documentationNodeId,
+					node.id,
+					graph.relationships,
+				),
 				source: documentationNodeId,
 				target: node.id,
 				type: "DocumentationRelationship",
 			};
-			useStore.getState().setNodes(selectedFile, (prevNodes) => [
+			useStore.getState().updateNodes((prevNodes) => [
 				...prevNodes.map((node) => {
 					node.selected = false;
 					return node;
 				}),
 				documentationNode,
 			]);
-			useStore.getState().setEdges(selectedFile, (prevEdges) => [...prevEdges, documentationEdge]);
+			useStore
+				.getState()
+				.updateRelationships((prevEdges) => [
+					...prevEdges,
+					documentationEdge,
+				]);
 		} else {
-			useStore.getState().setNodes(selectedFile, (prevNodes) => [
+			useStore.getState().updateNodes((prevNodes) => [
 				...prevNodes.map((node) => {
 					if (node.id === incomingDocumentationNodes[0].id) {
 						node.selected = true;

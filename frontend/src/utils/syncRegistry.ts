@@ -1,118 +1,289 @@
 import { SyncID, SyncSystem } from "@/adapters/consts";
 
 /**
- * A unique identifier used to register a syncable system.
+ * Defines a syncable node in the system. Each node has its own state (`T`) and derives it
+ * from a parent state (`P`) through serialization and deserialization.
+ *
+ * @template T - The local state type of this system.
+ * @template P - The state type expected from its parent.
  */
-
-/**
- * An adapter that defines how to get/set a system's state,
- * and how to serialize/deserialize it to/from the raw text source.
- */
-export interface SyncAdapter<T> {
-	/**
-	 * Returns the current local state for this system.
-	 */
-	get: () => T;
-
-	/**
-	 * Updates the local state of the system.
-	 * @param value - The new value to set.
-	 */
-	set: (value: T) => void;
-
-	/**
-	 * Converts the local system state to text form.
-	 * @param value - The system's current local state.
-	 * @param prevText - The full text state before conversion.
-	 * @returns A new string representing the updated text state.
-	 */
-	serialize: (value: T, prevText: string) => string;
-
-	/**
-	 * Converts the full text into the system's local state.
-	 * @param text - The current raw text data.
-	 * @returns A parsed local value derived from the text.
-	 */
-	deserialize: (text: string) => T;
+export interface SyncAdapterNode<T, P> {
+	id: SyncID;
+	get: () => T | null;
+	set: (value: T | null) => void;
+	serialize: (value: T) => P;
+	deserialize: (parent: P) => T | null;
 }
 
 /**
- * The internal sync registry that maps system IDs to their adapters.
+ * Wraps a syncable node into a hierarchical system of nested sync systems.
+ *
+ * @template T - The local state type of this system.
+ * @template P - The parent state type this system depends on.
  */
-const registry = new Map<SyncID, SyncAdapter<any>>();
+export interface SyncAdapterSystem<T, P> {
+	subSystems: Map<SyncID, SyncAdapterSystem<any, T>>;
+	node: SyncAdapterNode<T, P>;
+	parent?: SyncAdapterSystem<P, any>;
+}
+
+/** Global registry mapping all sync system IDs to their registered adapters. */
+const registry = new Map<SyncID, SyncAdapterSystem<any, any>>();
 
 /**
- * Registers a syncable system with the global sync registry.
- *
- * @param id - A unique identifier for the system (e.g., 'graph', 'snippet:node1').
- * @param adapter - The adapter providing get/set/serialize/deserialize functions.
+ * Tracks top-level systems that have no parent (e.g., 'text').
+ * Useful for debugging or root-level operations.
  */
-export const registerSyncSystem = <T>(
-	id: SyncID,
-	adapter: SyncAdapter<T>,
+const registryTree = new Map<SyncID, SyncAdapterSystem<any, any>>();
+
+/**
+ * Registers a sync system into the global registry. If a parent ID is provided,
+ * the system is added as a child of the parent and linked through the tree.
+ *
+ * @template T - The local type of the system being registered.
+ * @template P - The type of the parent system this system depends on.
+ *
+ * @param node - The sync node to register.
+ * @param parentId - Optional ID of the parent sync system.
+ */
+export const registerSyncSystem = <T, P>(
+	node: SyncAdapterNode<T, P>,
+	parentId?: SyncID,
 ): void => {
-	registry.set(id, adapter);
+	const parent = registry.get(parentId);
+
+	const system: SyncAdapterSystem<T, P> = {
+		subSystems: new Map<SyncID, SyncAdapterSystem<any, T>>(),
+		node,
+		parent: parent,
+	};
+
+	registry.set(node.id, system);
+
+	if (parent !== undefined) {
+		parent.subSystems.set(node.id, system);
+	} else if (parentId !== undefined) {
+		console.warn(`Parent system "${parentId}" not found for "${node.id}".`);
+	} else {
+		// Really only Text should be allowed, but we will keep it general for now
+		if (node.id !== SyncSystem.Text) {
+			console.warn(
+				`Trying to set an unsupported Sync System as root (${node.id}); Text Sync System is only allowed at root.`,
+			);
+			// return;
+		}
+		registryTree.set(node.id, system);
+	}
 };
 
 /**
- * Unregisters a syncable system from the registry.
+ * Unregisters a sync system from the registry, and removes it from its parent (if any).
  *
- * @param id - The identifier of the system to remove.
+ * @param id - The ID of the sync system to remove.
  */
 export const unregisterSyncSystem = (id: SyncID): void => {
-	registry.delete(id);
-};
+	const syncSystem = registry.get(id);
+	if (syncSystem !== undefined) {
+		// Remove from parent's subSystems, if applicable
+		const parentId = syncSystem.parent?.node.id;
+		if (parentId !== undefined) {
+			registry.get(parentId)?.subSystems.delete(id);
+		} else {
+			// Otherwise, remove from the root-level registry tree
+			registryTree.delete(id);
+		}
 
-/**
- * Synchronizes all systems from the current text state.
- * The 'text' system must be registered as the single source of truth.
- * All systems except 'text' and the triggering system will be updated.
- *
- * @param sourceId - The system initiating the sync (will be excluded).
- */
-export const synchronize = (sourceId: SyncID): void => {
-	const textAdapter = registry.get(SyncSystem.Text);
-	if (!textAdapter) {
-		throw new Error("No 'text' system registered — cannot synchronize.");
-	}
-
-	const currentText = textAdapter.get();
-
-	for (const [id, adapter] of registry.entries()) {
-		if (id === SyncSystem.Text || id === sourceId) continue;
-
-		const newValue = adapter.deserialize(currentText);
-		adapter.set(newValue);
+		registry.delete(id);
 	}
 };
 
-/**
- * Applies a change from a given system and synchronizes all others.
- * This converts the system's local state into updated text,
- * writes it back to the text system, and then synchronizes all other systems.
- *
- * @param id - The system ID that triggered the change.
- */
-export const applySystemChange = (id: SyncID): void => {
-	const adapter = registry.get(id);
-	const textAdapter = registry.get(SyncSystem.Text);
+export const syncFrom = (id: SyncID): void => {
+	const visited = new Set<SyncID>();
+	const system = registry.get(id);
+	if (!system) {
+        const err = `Sync system "${id}" not found.`;
+		console.error(err);
+        throw err;
+	}
 
-	if (!adapter || !textAdapter) return;
+	const syncParent = <T, P>(
+		node: SyncAdapterNode<T, P>,
+		parent: SyncAdapterNode<P, any>,
+	) => {
+		const localValue = node.get();
+		if (localValue !== null) {
+			const serialized: P = node.serialize(localValue);
+			parent.set(serialized);
+			visited.add(parent.id);
+		}
+	};
+	const syncChild = <T, P>(
+		node: SyncAdapterNode<T, P>,
+		child: SyncAdapterNode<any, T>,
+	) => {
+		const localValue = node.get();
+		if (localValue !== null) {
+			const deserialized: T = child.deserialize(localValue);
+			child.set(deserialized);
+			visited.add(child.id);
+		}
+	};
 
-	const localValue = adapter.get();
-	const prevText = textAdapter.get();
-	const newText = adapter.serialize(localValue, prevText);
+	const syncDown = (system: SyncAdapterSystem<any, any>) => {
+		for (const child of system.subSystems.values()) {
+			if (!visited.has(child.node.id)) {
+				syncChild(system.node, child.node);
+				syncDown(child);
+			}
+		}
+	};
 
-	textAdapter.set(newText);
-	synchronize(SyncSystem.Text);
+	const syncUp = (system: SyncAdapterSystem<any, any>) => {
+		const parent = system.parent;
+		if (parent !== undefined) {
+			// Sync Parent
+			syncParent(system.node, parent.node);
+			visited.add(parent.node.id);
+
+			// Propagate changes down from parent
+			syncDown(parent);
+
+			// Continue to propagate changes to next parent
+			syncUp(parent);
+		}
+	};
+
+	visited.add(id);
+	syncDown(system);
+	syncUp(system);
 };
 
 /**
- * Retrieves the sync adapter registered under the given ID.
+ * Performs a full synchronization starting from the given node.
  *
- * @param id - The system ID to look up.
- * @returns The registered sync adapter, if found.
+ * Propagates upward from the node to the root by serializing and applying local changes.
+ * Then walks downward from the root to update all children via deserialization.
+ *
+ * Nodes are only visited once and tracked via a `visited` set.
+ *
+ * @param id - The ID of the system where the change originated.
  */
-export const getSyncAdapter = <T>(id: SyncID): SyncAdapter<T> | undefined => {
+// export const syncFrom = (id: SyncID): void => {
+// 	const visited = new Set<SyncID>();
+
+// 	/**
+// 	 * Propagates local state upward by serializing to the parent system.
+// 	 * Returns the final root state after applying all serializations.
+// 	 */
+// 	const syncUp = <T, P>(system: SyncAdapterSystem<T, P>): P => {
+// 		if (visited.has(system.node.id)) {
+// 			throw new Error(
+// 				`Cycle or duplicate visit detected at node '${system.node.id}'`,
+// 			);
+// 		}
+// 		visited.add(system.node.id);
+
+// 		const local = system.node.get();
+// 		if (local === null) {
+// 			throw new Error(`Cannot sync from null node: '${system.node.id}'`);
+// 		}
+
+// 		const serialized: P = system.node.serialize(local);
+
+// 		if (system.parent) {
+// 			system.parent.node.set(serialized);
+// 			return syncUp(system.parent);
+// 		} else {
+// 			// This node is the root
+// 			return serialized;
+// 		}
+// 	};
+
+// 	/**
+// 	 * Propagates state downward by deserializing the parent value into the local node,
+// 	 * and recursively into all child systems.
+// 	 */
+// 	const syncDown = <T, P>(
+// 		parentValue: P,
+// 		system: SyncAdapterSystem<T, P>,
+// 	): void => {
+// 		if (visited.has(system.node.id)) return;
+// 		visited.add(system.node.id);
+
+// 		const local = system.node.deserialize(parentValue);
+// 		system.node.set(local);
+
+// 		if (local !== null) {
+// 			for (const child of system.subSystems.values()) {
+// 				syncDown(local, child);
+// 			}
+// 		}
+// 	};
+
+// 	// Find and validate the starting node
+// 	const curNode = registry.get(id);
+// 	if (!rootNode) throw new Error(`Node '${id}' not found in registry`);
+
+// 	// Propagate upward to compute new root state
+// 	const rootValue = syncUp(curNode);
+
+// 	// Identify the topmost root
+// 	let topNode: SyncAdapterSystem<any, any> = rootNode;
+// 	while (topNode.parent !== undefined) {
+// 		topNode = topNode.parent;
+// 	}
+
+// 	// Propagate changes downward from the root
+// 	syncDown(rootValue, topNode);
+// };
+
+/**
+ * Returns the sync system registered with the given ID.
+ *
+ * @param id - The ID of the system to retrieve.
+ * @returns The sync system, if registered.
+ */
+export const getSyncAdapter = <T, P>(
+	id: SyncID,
+): SyncAdapterSystem<T, P> | undefined => {
 	return registry.get(id);
+};
+
+/**
+ * Resets all registered sync systems by setting their local state to `null`.
+ *
+ * This is typically used during app initialization or file switching
+ * to clear residual state and avoid stale data propagation.
+ */
+export const resetSyncSystems = (): void => {
+	registry.forEach((system, id) => {
+		try {
+			system.node.set(null);
+		} catch (err) {
+			console.warn(`Failed to reset sync system "${id}" with null:`, err);
+		}
+	});
+};
+
+/**
+ * Updates the local state of a specific sync system and optionally triggers a sync pass.
+ *
+ * @param id - The ID of the sync system to update.
+ * @param newValue - The new value to assign to the system.
+ * @param triggerSync - Whether to trigger a full sync after updating. Default is `true`.
+ */
+export const updateSyncSystem = <T>(
+	id: SyncID,
+	newValue: T,
+	triggerSync: boolean = true,
+): void => {
+	const system = registry.get(id);
+	if (system) {
+		system.node.set(newValue);
+		if (triggerSync) {
+			syncFrom(id);
+		}
+	} else {
+		console.warn(`Sync system "${id}" not found.`);
+	}
 };

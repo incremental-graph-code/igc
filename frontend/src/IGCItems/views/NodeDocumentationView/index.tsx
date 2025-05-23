@@ -22,7 +22,7 @@ const RawDocumentationNodeView: React.FC = () => {
 	const selectedItem = useStore((state) => state.selectedItem);
 	const fileChanged = useStore((state) => state.fileChanged);
 	const mode = useStore((state) => state.mode);
-	const setNodes = useStore((state) => state.setNodes);
+	const sNodes = useStore((state) => state.sNodes);
 	const savedNodes = useStore((state) => state.savedNodes);
 	const getSessionData = useStore((state) => state.getSessionData);
 
@@ -87,7 +87,7 @@ const RawDocumentationNodeView: React.FC = () => {
 	const onChange = (content: string | undefined) => {
 		setContent(content);
 		console.log("Content changed", content);
-		setNodes(selectedFile, (prevNodes) => {
+		sNodes(selectedFile, (prevNodes) => {
 			return prevNodes.map((node) => {
 				if (node.id === currentNode.id) {
 					currentNode.data.documentation = content ?? "";

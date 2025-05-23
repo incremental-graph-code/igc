@@ -5,17 +5,17 @@ import { IGCRelationshipProps } from "@/IGCItems/relationships/BaseRelationship"
 import { IGCViewProps } from "@/IGCItems/views/BaseView";
 import {
 	Cache,
-	GetFileContentResponse,
+	// GetFileContentResponse,
 	IGCFileSession,
 	IGCFileSessionData,
 } from "shared";
-import { getFileContent, setPrimarySession } from "@/requests";
+import { setPrimarySession } from "@/requests";
 import { SetState, GetState } from "../store";
 
-interface FileHistory {
-	lastSavedTimestamp: number;
-	lastSavedContent: string;
-}
+// interface FileHistory {
+// 	lastSavedTimestamp: number;
+// 	lastSavedContent: string;
+// }
 type ThemeMode = "light" | "dark";
 
 type Callback = () => void;
@@ -26,33 +26,33 @@ type RegisteredView = IGCViewProps & RegistryComponent;
 
 export interface DefaultSliceState {
 	// VARIABLES
-	selectedFile: string | null;
-	setSelectedFile: (updater: (prev: string | null) => string | null) => void;
+	// selectedFile: string | null;
+	// setSelectedFile: (updater: (prev: string | null) => string | null) => void;
 
 	projectDirectory: string | null;
 	setProjectDirectory: (
 		updater: (prev: string | null) => string | null,
 	) => void;
 
-	fileContent: string | null;
-	updateFileContent: (
-		updater: (prev: string | null) => string | null,
-	) => void;
-
-	fileChanged: number;
-	// localContentBuffer: string | null;
-	// setLocalContentBuffer: (
+	// fileContent: string | null;
+	// updateFileContent: (
 	// 	updater: (prev: string | null) => string | null,
 	// ) => void;
 
-	fileHistory: { [key: string]: FileHistory };
-	setFileHistory: (
-		updater: (prev: { [key: string]: FileHistory }) => {
-			[key: string]: FileHistory;
-		},
-	) => void;
+	// fileChanged: number;
+	// // localContentBuffer: string | null;
+	// // setLocalContentBuffer: (
+	// // 	updater: (prev: string | null) => string | null,
+	// // ) => void;
 
-	isIGCFile: boolean; // THIS WILL UPDATE ONLY JUST AFTER THE FILE SELECTED IS CHANGED
+	// fileHistory: { [key: string]: FileHistory };
+	// setFileHistory: (
+	// 	updater: (prev: { [key: string]: FileHistory }) => {
+	// 		[key: string]: FileHistory;
+	// 	},
+	// ) => void;
+
+	// isIGCFile: boolean; // THIS WILL UPDATE ONLY JUST AFTER THE FILE SELECTED IS CHANGED
 
 	selectedItems: Item[];
 	setSelectedItems: (updater: (prev: Item[]) => Item[]) => void;
@@ -60,18 +60,18 @@ export interface DefaultSliceState {
 	selectedItem: Item | null;
 	setSelectedItem: (updater: (prev: Item | null) => Item | null) => void;
 
-	waitForSelection: boolean;
-	setWaitForSelection: (updater: (prev: boolean) => boolean) => void;
+	// waitForSelection: boolean;
+	// setWaitForSelection: (updater: (prev: boolean) => boolean) => void;
 
 	chosenNode: Node | null;
 	setChosenNode: (updater: (prev: Node | null) => Node | null) => void;
 
-	hasEditor: { [fileKey: string]: boolean };
-	setHasEditorCreated: (fileKey: string) => void;
-	setHasEditorInitialized: (fileKey: string) => void;
+	// hasEditor: { [fileKey: string]: boolean };
+	// setHasEditorCreated: (fileKey: string) => void;
+	// setHasEditorInitialized: (fileKey: string) => void;
 
 	nodes: { [file: string]: Node[] };
-	setNodes: (file: string, updater: (prev: Node[]) => Node[]) => void;
+	sNodes: (file: string, updater: (prev: Node[]) => Node[]) => void;
 	getNodes: (file: string) => Node[];
 	savedNodes: { [file: string]: { [id: string]: Node } };
 	setSavedNodes: (
@@ -80,7 +80,7 @@ export interface DefaultSliceState {
 	) => void;
 
 	edges: { [file: string]: Edge[] };
-	setEdges: (file: string, updater: (prev: Edge[]) => Edge[]) => void;
+	sEdges: (file: string, updater: (prev: Edge[]) => Edge[]) => void;
 	getEdges: (file: string) => Edge[];
 	savedEdges: { [file: string]: { [id: string]: Edge } };
 	setSavedEdges: (
@@ -143,109 +143,109 @@ export const createDefaultSlice = (
 	get: GetState,
 ): DefaultSliceState => ({
 	// VARIABLES
-	selectedFile: null,
-	setSelectedFile: async (
-		updater: (prev: string | null) => string | null,
-	) => {
-		// Initialize variables
-		let fileContent: GetFileContentResponse | null = null;
+	// selectedFile: null,
+	// setSelectedFile: async (
+	// 	updater: (prev: string | null) => string | null,
+	// ) => {
+	// 	// Initialize variables
+	// 	let fileContent: GetFileContentResponse | null = null;
 
-		// Perform a synchronous update for selectedFile and get the updated file
-		const updatedFile = updater(get().selectedFile);
+	// 	// Perform a synchronous update for selectedFile and get the updated file
+	// 	const updatedFile = updater(get().selectedFile);
 
-		// Await the async operation
-		if (updatedFile !== null) {
-			fileContent = await getFileContent(updatedFile);
-		}
-		const newFileHistoryElement = {
-			lastSavedTimestamp: fileContent?.lastModified || 0,
-			lastSavedContent: fileContent?.content || "",
-		};
+	// 	// Await the async operation
+	// 	if (updatedFile !== null) {
+	// 		fileContent = await getFileContent(updatedFile);
+	// 	}
+	// 	const newFileHistoryElement = {
+	// 		lastSavedTimestamp: fileContent?.lastModified || 0,
+	// 		lastSavedContent: fileContent?.content || "",
+	// 	};
 
-		set((state) => {
-			// Save the previous file history
-			if (updatedFile !== null && fileContent !== null) {
-				const fileHistory: { [key: string]: FileHistory } = {};
-				fileHistory[updatedFile] = newFileHistoryElement;
+	// 	set((state) => {
+	// 		// Save the previous file history
+	// 		if (updatedFile !== null && fileContent !== null) {
+	// 			const fileHistory: { [key: string]: FileHistory } = {};
+	// 			fileHistory[updatedFile] = newFileHistoryElement;
 
-				return {
-					fileHistory: { ...state.fileHistory, ...fileHistory },
-					selectedItem: null,
-					selectedItems: [],
-					// navBarContainer: [],
-					selectedFile: updatedFile,
-					fileContent: fileContent.content,
-					currentSessionId: null,
-					isIGCFile:
-						updatedFile !== null && updatedFile.endsWith(".igc"),
-					fileChanged: Date.now(),
-				};
-			}
-			// If selected file is null, then we don't need to save the file history
-			return {
-				selectedItem: null,
-				selectedItems: [],
-				// navBarContainer: [],
-				selectedFile: updatedFile,
-				fileContent: fileContent?.content || null,
-				currentSessionId: null,
-				isIGCFile: updatedFile !== null && updatedFile.endsWith(".igc"),
-				fileChanged: Date.now(),
-			};
-		});
-	},
+	// 			return {
+	// 				fileHistory: { ...state.fileHistory, ...fileHistory },
+	// 				selectedItem: null,
+	// 				selectedItems: [],
+	// 				// navBarContainer: [],
+	// 				selectedFile: updatedFile,
+	// 				fileContent: fileContent.content,
+	// 				currentSessionId: null,
+	// 				isIGCFile:
+	// 					updatedFile !== null && updatedFile.endsWith(".igc"),
+	// 				fileChanged: Date.now(),
+	// 			};
+	// 		}
+	// 		// If selected file is null, then we don't need to save the file history
+	// 		return {
+	// 			selectedItem: null,
+	// 			selectedItems: [],
+	// 			// navBarContainer: [],
+	// 			selectedFile: updatedFile,
+	// 			fileContent: fileContent?.content || null,
+	// 			currentSessionId: null,
+	// 			isIGCFile: updatedFile !== null && updatedFile.endsWith(".igc"),
+	// 			fileChanged: Date.now(),
+	// 		};
+	// 	});
+	// },
 
 	projectDirectory: 
         "/Users/maxboksem/Code/Github/Web/igc/.vscode/flask-backend",
 		// "/Users/maxboksem/Documents/Master's Thesis/MSc-SE-Master-Project/content",
 	setProjectDirectory: (updater: (prev: string | null) => string | null) =>
-		set((state) => {
-			state.setSelectedFile(() => null); // Reset the selected file
-			return { projectDirectory: updater(state.projectDirectory) };
-		}),
+		set((state) => ({
+			fileData: null, // Reset the selected file
+			projectDirectory: updater(state.projectDirectory)
+		})),
 
-	fileContent: null,
-	updateFileContent: (updater: (prev: string | null) => string | null) =>
-		set((state) => {
-			const fileContent = updater(state.fileContent);
-			// Save the previous file history
-			if (state.selectedFile !== null && fileContent !== null) {
-				const newFileHistoryElement = {
-					lastSavedTimestamp: Date.now(),
-					lastSavedContent: fileContent,
-				};
-				const fileHistory: { [key: string]: FileHistory } = {};
-				fileHistory[state.selectedFile] = newFileHistoryElement;
+	// fileContent: null,
+	// updateFileContent: (updater: (prev: string | null) => string | null) =>
+	// 	set((state) => {
+	// 		const fileContent = updater(state.fileContent);
+	// 		// Save the previous file history
+	// 		if (state.selectedFile !== null && fileContent !== null) {
+	// 			const newFileHistoryElement = {
+	// 				lastSavedTimestamp: Date.now(),
+	// 				lastSavedContent: fileContent,
+	// 			};
+	// 			const fileHistory: { [key: string]: FileHistory } = {};
+	// 			fileHistory[state.selectedFile] = newFileHistoryElement;
 
-				return {
-					fileHistory: { ...state.fileHistory, ...fileHistory },
-					fileContent: fileContent,
-					fileChanged: Date.now(),
-				};
-			}
-			// If selected file is null, then we don't need to save the file history
-			return {
-				fileContent: fileContent,
-				fileChanged: Date.now(),
-			};
-		}),
-	fileChanged: Date.now(),
-	// set((state) => ({ fileContent: updater(state.fileContent) })),
+	// 			return {
+	// 				fileHistory: { ...state.fileHistory, ...fileHistory },
+	// 				fileContent: fileContent,
+	// 				fileChanged: Date.now(),
+	// 			};
+	// 		}
+	// 		// If selected file is null, then we don't need to save the file history
+	// 		return {
+	// 			fileContent: fileContent,
+	// 			fileChanged: Date.now(),
+	// 		};
+	// 	}),
+	// fileChanged: Date.now(),
+	// // set((state) => ({ fileContent: updater(state.fileContent) })),
 
-	// localContentBuffer: null,
-	// setLocalContentBuffer: (updater: (prev: string | null) => string | null) =>
-	// 	set((state) => ({
-	// 		localContentBuffer: updater(state.localContentBuffer),
-	// 	})),
+	// // localContentBuffer: null,
+	// // setLocalContentBuffer: (updater: (prev: string | null) => string | null) =>
+	// // 	set((state) => ({
+	// // 		localContentBuffer: updater(state.localContentBuffer),
+	// // 	})),
 
-	fileHistory: {},
-	setFileHistory: (
-		updater: (prev: { [key: string]: FileHistory }) => {
-			[key: string]: FileHistory;
-		},
-	) => set((state) => ({ fileHistory: updater(state.fileHistory) })),
+	// fileHistory: {},
+	// setFileHistory: (
+	// 	updater: (prev: { [key: string]: FileHistory }) => {
+	// 		[key: string]: FileHistory;
+	// 	},
+	// ) => set((state) => ({ fileHistory: updater(state.fileHistory) })),
 
-	isIGCFile: false,
+	// isIGCFile: false,
 
 	selectedItems: [],
 	setSelectedItems: (updater: (prev: Item[]) => Item[]) =>
@@ -255,34 +255,34 @@ export const createDefaultSlice = (
 	setSelectedItem: (updater: (prev: Item | null) => Item | null) =>
 		set((state) => ({ selectedItem: updater(state.selectedItem) })),
 
-	waitForSelection: false,
-	setWaitForSelection: (updater: (prev: boolean) => boolean) =>
-		set((state) => ({
-			waitForSelection: updater(state.waitForSelection),
-		})),
+	// waitForSelection: false,
+	// setWaitForSelection: (updater: (prev: boolean) => boolean) =>
+	// 	set((state) => ({
+	// 		waitForSelection: updater(state.waitForSelection),
+	// 	})),
 
 	chosenNode: null,
 	setChosenNode: (updater: (prev: Node | null) => Node | null) =>
 		set((state) => ({ chosenNode: updater(state.chosenNode) })),
 
-	hasEditor: {},
-	setHasEditorCreated: (fileKey: string) =>
-		set((state) => {
-			if (state.hasEditor[fileKey] === undefined) {
-				state.hasEditor[fileKey] = false;
-			}
-			return state;
-		}),
-	setHasEditorInitialized: (fileKey: string) =>
-		set((state) => {
-			if (state.hasEditor[fileKey] !== undefined) {
-				state.hasEditor[fileKey] = true;
-			}
-			return state;
-		}),
+	// hasEditor: {},
+	// setHasEditorCreated: (fileKey: string) =>
+	// 	set((state) => {
+	// 		if (state.hasEditor[fileKey] === undefined) {
+	// 			state.hasEditor[fileKey] = false;
+	// 		}
+	// 		return state;
+	// 	}),
+	// setHasEditorInitialized: (fileKey: string) =>
+	// 	set((state) => {
+	// 		if (state.hasEditor[fileKey] !== undefined) {
+	// 			state.hasEditor[fileKey] = true;
+	// 		}
+	// 		return state;
+	// 	}),
 
 	nodes: {},
-	setNodes: (file, updater) =>
+	sNodes: (file, updater) =>
 		set((state) => ({
 			nodes: {
 				...state.nodes,
@@ -301,7 +301,7 @@ export const createDefaultSlice = (
 		})),
 
 	edges: {},
-	setEdges: (file, updater) =>
+	sEdges: (file, updater) =>
 		set((state) => ({
 			edges: {
 				...state.edges,
@@ -322,10 +322,10 @@ export const createDefaultSlice = (
 	currentSessionId: null,
 	setCurrentSessionId: (updater: (prev: string | null) => string | null) =>
 		set((state) => {
-			if (state.selectedFile !== null) {
+			if (state.fileData !== null) {
 				const newSessionId = updater(state.currentSessionId);
 				if (newSessionId !== null) {
-					setPrimarySession(state.selectedFile, newSessionId);
+					setPrimarySession(state.fileData.filePath, newSessionId);
 				}
 				return { currentSessionId: newSessionId };
 			}

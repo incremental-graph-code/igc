@@ -11,7 +11,7 @@ import useStore from "@/store/store";
 import { isCodeNode } from "@/IGCItems/nodes/CodeNode";
 
 const RawMethodRelationship: IGCRelationshipProps = (props) => {
-	const { setNodes } = useStore();
+	const { sNodes } = useStore();
 	const sourceNode = reactflowStore(
 		useCallback(
 			(store) => store.nodeInternals.get(props.source),
@@ -47,7 +47,7 @@ const RawMethodRelationship: IGCRelationshipProps = (props) => {
 				console.log("Response", response);
 				if (response.new_definitions.classes.length !== 0) {
 					// Update method node with class name
-					setNodes(selectedFile, (prevNodes) => {
+					sNodes(selectedFile, (prevNodes) => {
 						return prevNodes.map((node) => {
 							if (isCodeNode(node) && node.id === props.source) {
 								node.data.codeData = {

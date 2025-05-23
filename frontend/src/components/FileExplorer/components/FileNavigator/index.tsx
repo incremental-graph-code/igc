@@ -181,6 +181,7 @@ const FileNavigator: FC = () => {
 						setSelectedNode(null);
 					}
 				}}
+                
 				rowHeight={32}
 				indent={16}
 			>

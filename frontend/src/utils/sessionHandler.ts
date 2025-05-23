@@ -34,7 +34,7 @@ export const updateExecutionRelationships = async (
 	);
 	useStore
 		.getState()
-		.setEdges(filePath, (prevEdges) => [
+		.sEdges(filePath, (prevEdges) => [
 			...prevEdges.filter((e) => e.type !== "ExecutionRelationship"),
 			...updateExecutionPath(newExecutionData),
 		]);
@@ -74,7 +74,7 @@ export const removeNodeInSession = async (filePath: string, nodeId: string) => {
 	// );
 	// useStore
 	// 	.getState()
-	// 	.setEdges(filePath, (prevEdges) => [
+	// 	.sEdges(filePath, (prevEdges) => [
 	// 		...prevEdges.filter((e) => e.type !== "ExecutionRelationship"),
 	// 		...updateExecutionPath(newExecutionData),
 	// 	]);

@@ -78,7 +78,7 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 					setCurrentSessionId(() => sessionName);
 					useStore
 						.getState()
-						.setEdges(selectedFile, (prevEdges) =>
+						.sEdges(selectedFile, (prevEdges) =>
 							prevEdges.filter(
 								(edge) => edge.type !== "ExecutionRelationship",
 							),

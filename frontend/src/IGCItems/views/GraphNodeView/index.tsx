@@ -76,7 +76,7 @@ const RawGraphNodeView: React.FC = () => {
 		if (curFile === null || selectedItem === null) {
 			return;
 		}
-		useStore.getState().setNodes(curFile, (prevNodes) =>
+		useStore.getState().sNodes(curFile, (prevNodes) =>
 			prevNodes.map((node) => {
 				if (node.id === selectedItem.id) {
 					(node as Node<GraphNodeData>).data.selectedSession =
@@ -109,7 +109,7 @@ const RawGraphNodeView: React.FC = () => {
 						"Debounced action triggered with path:",
 						igcFile,
 					);
-					useStore.getState().setNodes(curFile, (prevNodes) =>
+					useStore.getState().sNodes(curFile, (prevNodes) =>
 						prevNodes.map((node) => {
 							if (node.id === selectedItem.id) {
 								(node as Node<GraphNodeData>).data.filePath =
@@ -119,7 +119,7 @@ const RawGraphNodeView: React.FC = () => {
 						}),
 					);
 					setGoodIGCFile(igcFile);
-					useStore.getState().setNodes(curFile, (prevNodes) =>
+					useStore.getState().sNodes(curFile, (prevNodes) =>
 						prevNodes.map((node) => {
 							if (node.id === selectedItem.id) {
 								(node as Node<GraphNodeData>).data.filePath =

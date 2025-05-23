@@ -12,7 +12,7 @@ interface DependencyEdge {
 }
 
 export const createDependencyGraph = () => {
-	const { selectedFile, getNodes, getEdges, setEdges } = useStore.getState();
+	const { selectedFile, getNodes, getEdges, sEdges } = useStore.getState();
 	if (selectedFile === null) {
 		return;
 	}
@@ -106,7 +106,7 @@ export const createDependencyGraph = () => {
 		});
 	}
 
-	setEdges(selectedFile, (prevEdges) => {
+	sEdges(selectedFile, (prevEdges) => {
 		let edges = [
 			...prevEdges.filter(
 				(e) =>

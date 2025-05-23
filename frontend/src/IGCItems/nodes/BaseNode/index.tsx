@@ -49,7 +49,7 @@ const menuItems: ContextMenuItem<ContextMenuAction>[] = [
 ];
 
 const RawBaseNode: IGCNodeProps = ({ id, data, selected }) => {
-	const setNodes = useStore((state) => state.setNodes);
+	const sNodes = useStore((state) => state.sNodes);
 
 	const { onContextMenu } = useContextMenu(menuItems);
 
@@ -57,7 +57,7 @@ const RawBaseNode: IGCNodeProps = ({ id, data, selected }) => {
 		console.log("Delete action triggered for node:", id);
 		const curFile = useStore.getState().selectedFile;
 		if (curFile !== null) {
-			setNodes(curFile, (prevNodes) =>
+			sNodes(curFile, (prevNodes) =>
 				prevNodes.filter((node) => node.id !== id),
 			);
 		}
@@ -66,7 +66,7 @@ const RawBaseNode: IGCNodeProps = ({ id, data, selected }) => {
 		console.log("Duplicate action triggered for node:", id);
 		const curFile = useStore.getState().selectedFile;
 		if (curFile !== null) {
-			setNodes(curFile, (prevNodes) => {
+			sNodes(curFile, (prevNodes) => {
 				const node = prevNodes.find((node) => node.id === id);
 				if (node === undefined) {
 					return prevNodes;

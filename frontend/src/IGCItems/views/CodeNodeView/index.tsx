@@ -4,13 +4,12 @@ import CodeNode, {
 } from "@/IGCItems/nodes/CodeNode";
 import { IGCViewProps } from "../BaseView";
 import { createView } from "@/utils/componentCache";
-import { RegistryComponent } from "@/types/frontend";
+import { ItemType, RegistryComponent } from "@/types/frontend";
 
 import useStore from "@/store/store";
 import { Node } from "reactflow";
 
 import React, { useEffect, useRef } from "react";
-import { Editor, Monaco } from "@monaco-editor/react";
 import { editor, KeyCode, KeyMod } from "monaco-editor";
 import { useRunButton } from "../viewUtils";
 import TabbedCodeOutput from "@/components/TabbedCodeOutput";
@@ -20,110 +19,148 @@ import { Box } from "@mui/material";
 import MarkdownDisplay from "@/components/MarkdownDisplay";
 import { showSuggestionSnippet } from "@/utils/codeTemplates";
 import { useSaveIndicator } from "@/hooks/useSaveIndicator";
+import Editor from "@/components/Editor";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
+import { useSyncSystem } from "@/hooks/useSyncSystem";
+import { IGCGraph } from "@/types/graph";
+import { SyncSystem } from "@/adapters/consts";
+import { createSnippetSyncAdapter } from "@/adapters/snippet";
+import { getSyncAdapter } from "@/utils/syncRegistry";
+import { IGCNodeProps } from "@/IGCItems/nodes/BaseNode";
 
 const RawCodeNodeView: React.FC = () => {
-	const selectedFile = useStore((state) => state.selectedFile);
-	const selectedItem = useStore((state) => state.selectedItem);
-	const fileChanged = useStore((state) => state.fileChanged);
-    const currentSessionId = useStore((state) => state.currentSessionId);
-	const mode = useStore((state) => state.mode);
-	const setNodes = useStore((state) => state.setNodes);
-	const savedNodes = useStore((state) => state.savedNodes);
+	const fileData = useStore((state) => state.fileData);
+	const currentSessionId = useStore((state) => state.currentSessionId);
 	const getSessionData = useStore((state) => state.getSessionData);
 
-    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-    const monacoRef = useRef<Monaco | null>(null);
+	const getCodeNode = (
+		graph: IGCGraph,
+	): Node<IGCCodeNodeData<IGCNodeProps>> | null => {
+		const selectedItem = useStore.getState().selectedItem;
+		if (
+			selectedItem !== undefined &&
+			selectedItem.item.type === ItemType.node &&
+			isCodeNode(selectedItem.item.object)
+		) {
+			return graph.nodes.find(
+				(node: Node) => node.id === selectedItem.id,
+			);
+		}
+		return null;
+	};
 
-	const [content, setContent] = React.useState<string | undefined>(undefined);
+	const triggerUpdate = useSyncSystem<string, IGCGraph>(
+		createSnippetSyncAdapter<string, IGCGraph>(
+			SyncSystem.Snippet,
+			(graph: IGCGraph) => getCodeNode(graph).data.codeData.code,
+			(code: string, graph: IGCGraph) => {
+				const n: Node<IGCCodeNodeData<IGCNodeProps>> =
+					getCodeNode(graph);
+				if (n !== null) {
+					n.data.codeData.code = code;
+				}
+				return graph;
+			},
+			getSyncAdapter<IGCGraph, any>(SyncSystem.Graph).node,
+		),
+		SyncSystem.Graph,
+	);
 
-	const validItem =
-		selectedFile !== null &&
-		selectedItem !== null &&
-		selectedItem.item.type === "node";
+	const syncDebounce = useDebouncedCallback((code: string) => {
+		triggerUpdate(code);
+	}, 500);
+
+	// const validItem =
+	// 	selectedFile !== null &&
+	// 	selectedItem !== null &&
+	// 	selectedItem.item.type === "node";
 
 	// Save indicator
-	const onMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
-        editorRef.current = editor;
-        monacoRef.current = monaco;
-		setContent(editor.getModel()?.getValue());
+	// const onMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+	//     editorRef.current = editor;
+	//     monacoRef.current = monaco;
+	// 	setContent(editor.getModel()?.getValue());
 
-		// Custom save handler for Command+S or Ctrl+S
-		editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyS, () => {
-			const sFile = useStore.getState().selectedFile;
-			const curContent = editor.getModel()?.getValue();
-			const selectedItem = useStore.getState().selectedItem;
-			const savedNodes = useStore.getState().savedNodes;
-			if (
-				sFile !== null &&
-				curContent !== undefined &&
-				selectedItem !== null
-			) {
-				savedNodes[sFile][selectedItem.id].data.codeData.code =
-					curContent;
-				savedNodes[sFile][selectedItem.id].selected = true;
-				const rawGraphData = deserializeGraphData(
-					Object.values(savedNodes[sFile]),
-					Object.values(useStore.getState().savedEdges[sFile]),
-				);
-				saveFileContent(sFile, rawGraphData).then(() => {
-					useStore.getState().updateFileContent(() => rawGraphData);
-				});
-			}
-		});
-	};
-	useEffect(() => {
-		if (validItem) {
-			if (content !== undefined) {
-				// useSaveIndicator(editorPathKey, () =>
-				// 	content ===
-				// 		savedNodes[selectedFile][selectedItem.id]?.data.codeData
-				// 			.code
-				// 		? "saved"
-				// 		: "unsaved",
-				// );
-			}
-		}
-	}, [fileChanged, content]);
-	useEffect(() => {
-		const si = useStore.getState().selectedItem;
-		if (si !== null) {
-			useRunButton(si.item.object as Node<IGCCodeNodeData>);
-		}
-	}, [content, selectedItem?.id, currentSessionId]);
+	// 	// Custom save handler for Command+S or Ctrl+S
+	// 	editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyS, () => {
+	// 		const sFile = useStore.getState().selectedFile;
+	// 		const curContent = editor.getModel()?.getValue();
+	// 		const selectedItem = useStore.getState().selectedItem;
+	// 		const savedNodes = useStore.getState().savedNodes;
+	// 		if (
+	// 			sFile !== null &&
+	// 			curContent !== undefined &&
+	// 			selectedItem !== null
+	// 		) {
+	// 			savedNodes[sFile][selectedItem.id].data.codeData.code =
+	// 				curContent;
+	// 			savedNodes[sFile][selectedItem.id].selected = true;
+	// 			const rawGraphData = deserializeGraphData(
+	// 				Object.values(savedNodes[sFile]),
+	// 				Object.values(useStore.getState().savedEdges[sFile]),
+	// 			);
+	// 			saveFileContent(sFile, rawGraphData).then(() => {
+	// 				useStore.getState().updateFileContent(() => rawGraphData);
+	// 			});
+	// 		}
+	// 	});
+	// };
+	// useEffect(() => {
+	// 	if (validItem) {
+	// 		if (content !== undefined) {
+	// 			// useSaveIndicator(editorPathKey, () =>
+	// 			// 	content ===
+	// 			// 		savedNodes[selectedFile][selectedItem.id]?.data.codeData
+	// 			// 			.code
+	// 			// 		? "saved"
+	// 			// 		: "unsaved",
+	// 			// );
+	// 		}
+	// 	}
+	// }, [fileChanged, content]);
+	// useEffect(() => {
+	// 	const si = useStore.getState().selectedItem;
+	// 	if (si !== null) {
+	// 		useRunButton(si.item.object as Node<IGCCodeNodeData>);
+	// 	}
+	// }, [content, selectedItem?.id, currentSessionId]);
 
-	if (!validItem) {
-		return <div className="text-display">No node selected</div>;
+	// if (!validItem) {
+	// 	return <div className="text-display">No node selected</div>;
+	// }
+
+	// if (
+	// 	currentNodeItem.type !== "node" ||
+	// 	!isCodeNode(currentNodeItem.object)
+	// ) {
+	// 	return <div className="text-display">Not a valid node selected</div>;
+	// }
+	// const currentNode = currentNodeItem.object;
+
+	// const onChange = (content: string | undefined) => {
+	// 	setContent(content);
+	// 	console.log("Content changed", content);
+	// 	sNodes(selectedFile, (prevNodes) => {
+	// 		return prevNodes.map((node) => {
+	// 			if (node.id === currentNode.id) {
+	// 				currentNode.data.codeData.code = content ?? "";
+	// 				return currentNode;
+	// 			}
+	// 			return node;
+	// 		});
+	// 	});
+	//     if(content === "" && editorRef !== null && monacoRef !== null && monacoRef.current !== null){
+	//         showSuggestionSnippet(selectedItem.item.type, "python", monacoRef.current, editorRef.current);
+	//     }
+	// };
+	const selectedCodeNode = getCodeNode(useStore.getState().graph);
+	if (selectedCodeNode === null) {
+		return <div>No Selected Item</div>;
 	}
+	const editorPathKey = `${fileData.filePath}-${selectedCodeNode.id}`;
+	// useStore.getState().setHasEditorCreated(editorPathKey);
 
-	const currentNodeItem = selectedItem.item;
-	if (
-		currentNodeItem.type !== "node" ||
-		!isCodeNode(currentNodeItem.object)
-	) {
-		return <div className="text-display">Not a valid node selected</div>;
-	}
-	const currentNode = currentNodeItem.object;
-
-	const onChange = (content: string | undefined) => {
-		setContent(content);
-		console.log("Content changed", content);
-		setNodes(selectedFile, (prevNodes) => {
-			return prevNodes.map((node) => {
-				if (node.id === currentNode.id) {
-					currentNode.data.codeData.code = content ?? "";
-					return currentNode;
-				}
-				return node;
-			});
-		});
-        if(content === "" && editorRef !== null && monacoRef !== null && monacoRef.current !== null){
-            showSuggestionSnippet(selectedItem.item.type, "python", monacoRef.current, editorRef.current);
-        }
-	};
-	const editorPathKey = `${selectedFile}-${selectedItem.id}`;
-	useStore.getState().setHasEditorCreated(editorPathKey);
-
-	const sessionsData = getSessionData(selectedFile);
+	const sessionsData = getSessionData(fileData.filePath);
 	let lastExecutionData = null;
 	if (
 		currentSessionId !== null &&
@@ -132,7 +169,7 @@ const RawCodeNodeView: React.FC = () => {
 	) {
 		const sessionData = sessionsData.sessions[currentSessionId];
 		for (let i = sessionData.executions.length - 1; i >= 0; i--) {
-			if (sessionData.executions[i].nodeId === selectedItem.id) {
+			if (sessionData.executions[i].nodeId === selectedCodeNode.id) {
 				lastExecutionData = sessionData.executions[i];
 				break;
 			}
@@ -144,51 +181,40 @@ const RawCodeNodeView: React.FC = () => {
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
-                overflowY: "scroll",
+				overflowY: "scroll",
 			}}
 		>
-			{selectedItem !== null && selectedItem.item.type === "node" ? (
-				<div style={{ flexShrink: 0 }}>
-					<MarkdownDisplay node={selectedItem.item.object} />
-				</div>
-			) : null}
+			<div style={{ flex: "0 0 auto" }}>
+				<MarkdownDisplay node={selectedCodeNode} />
+			</div>
 			<div
 				style={{
-					display: "flex",
-					flexDirection: "column",
+					flex: "1 1 auto",
 					height: "100%",
-                    // minHeight: "200px",
+                    position: 'relative'
+					// minHeight: "200px",
 				}}
 			>
-				<div
-					style={{
-						flexGrow: 1,
+				<Editor
+					editorId={editorPathKey}
+					language="python"
+					sync={{
+						currentContent: selectedCodeNode.data.codeData.code,
+						triggerUpdate: (value) => syncDebounce(value),
 					}}
-				>
-					<Box
-						sx={{
-							position: "relative",
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
-                            height: "100%",
-						}}
-					>
-						<Editor
-							path={editorPathKey}
-							height="100%"
-							defaultLanguage="python"
-							defaultValue={currentNode.data.codeData.code}
-							theme={mode === "light" ? "light" : "vs-dark"}
-							onChange={onChange}
-							onMount={onMount}
-						/>
-					</Box>
-				</div>
+					getSavedContent={() => {
+						return useStore.getState().fileData.initialContent;
+					}}
+					//saveLogic={saveLogic}
+					initialContent={
+						getCodeNode(useStore.getState().graph).data.codeData
+							.code
+					}
+					// onChange={onChange}
+				/>
 			</div>
 			{lastExecutionData !== null && (
-				<div style={{ flexShrink: 0, transition: "all 0.3s ease" }}>
+				<div style={{ flex: "0 0 auto", transition: "all 0.3s ease" }}>
 					<TabbedCodeOutput
 						executionData={lastExecutionData}
 						// fitAddons={fitAddons}
@@ -204,7 +230,7 @@ const CodeNodeView: IGCViewProps & RegistryComponent = createView(
 	"CodeNodeView",
 	"Code Node View",
 	[CodeNode],
-    0,
+	0,
 	{},
 );
 

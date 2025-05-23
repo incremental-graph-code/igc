@@ -1,7 +1,8 @@
 import { SyncID } from "@/adapters/consts";
 import {
-	applySystemChange,
+	SyncAdapterNode,
 	registerSyncSystem,
+	syncFrom,
 	unregisterSyncSystem,
 } from "@/utils/syncRegistry";
 import { useEffect, useCallback } from "react";
@@ -30,23 +31,21 @@ import { useEffect, useCallback } from "react";
  * triggerGraphSync();
  * ```
  */
-export const useSyncSystem = <T>(
-	id: SyncID,
-	adapter: {
-		get: () => T;
-		set: (value: T) => void;
-		serialize: (value: T, prevText: string) => string;
-		deserialize: (text: string) => T;
-	},
-): (() => void) => {
+export const useSyncSystem = <T, P>(
+	adapterNode: SyncAdapterNode<T,P>,
+    parent?: SyncID
+): ((value?: T) => void) => {
 	useEffect(() => {
-		registerSyncSystem(id, adapter);
-		return () => unregisterSyncSystem(id);
-	}, [id, adapter]);
+		registerSyncSystem(adapterNode, parent);
+		return () => unregisterSyncSystem(adapterNode.id);
+	}, []);
 
-	const trigger = useCallback(() => {
-		applySystemChange(id);
-	}, [id]);
+	const trigger = useCallback((value?: T) => {
+        if (value !== undefined) {
+            adapterNode.set(value);
+        }
+		syncFrom(adapterNode.id);
+	}, []);
 
 	return trigger;
 };

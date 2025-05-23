@@ -2,8 +2,7 @@ import { SyncSystem } from "@/adapters/consts";
 import {
 	registerSyncSystem,
 	unregisterSyncSystem,
-	synchronize,
-	applySystemChange,
+	syncFrom,
 } from "./syncRegistry";
 
 describe("Sync Registry System", () => {
@@ -16,13 +15,14 @@ describe("Sync Registry System", () => {
 
 	it("should register and unregister systems without error", () => {
 		const adapter = {
+			id: "a",
 			get: () => "foo",
 			set: jest.fn(),
 			serialize: (val: string) => val,
 			deserialize: (text: string) => text,
 		};
 
-		expect(() => registerSyncSystem("a", adapter)).not.toThrow();
+		expect(() => registerSyncSystem(adapter)).not.toThrow();
 		expect(() => unregisterSyncSystem("a")).not.toThrow();
 	});
 
@@ -30,87 +30,116 @@ describe("Sync Registry System", () => {
 		let text = "initial";
 		let systemValue = "";
 
-		registerSyncSystem(SyncSystem.Text, {
+		registerSyncSystem({
+			id: SyncSystem.Text,
 			get: () => text,
 			set: (v) => (text = v),
 			serialize: (v) => v,
 			deserialize: (t) => t,
 		});
 
-		registerSyncSystem("a", {
-			get: () => systemValue,
-			set: (v) => (systemValue = v),
-			serialize: (v) => v.toUpperCase(),
-			deserialize: (t) => `parsed(${t})`,
-		});
+		registerSyncSystem(
+			{
+				id: "a",
+				get: () => systemValue,
+				set: (v) => (systemValue = v),
+				serialize: (v) => v.toUpperCase(),
+				deserialize: (t) => `parsed(${t})`,
+			},
+			SyncSystem.Text,
+		);
 
-		synchronize(SyncSystem.Text);
+		syncFrom(SyncSystem.Text);
 
 		expect(systemValue).toBe("parsed(initial)");
 	});
 
-	it("should apply change from a system and update text + others", () => {
-		let text = "start";
-		let systemA = "foo";
-		let systemB = "";
+	it("Sync System all under root - sync test", () => {
+		let text = "true";
+		let systemA = false;
+		let systemB = 1;
 
-		registerSyncSystem(SyncSystem.Text, {
+		registerSyncSystem({
+			id: SyncSystem.Text,
 			get: () => text,
 			set: (v) => (text = v),
 			serialize: (v) => v,
 			deserialize: (t) => t,
 		});
 
-		registerSyncSystem("a", {
-			get: () => systemA,
-			set: (v) => (systemA = v),
-			serialize: (val, prev) => `${prev}:${val}`, // merge into text
-			deserialize: (t) => `from(${t})`,
-		});
-
-		registerSyncSystem("b", {
-			get: () => systemB,
-			set: (v) => (systemB = v),
-			serialize: (v) => v,
-			deserialize: (t) => `sync(${t})`,
-		});
-
-		applySystemChange("a");
-
-		expect(text).toBe("start:foo");
-		expect(systemB).toBe("sync(start:foo)");
-	});
-
-	it("should gracefully handle missing adapters", () => {
-		// No adapter registered
-		expect(() => applySystemChange("unknown")).not.toThrow();
-		expect(() => synchronize("unknown")).toThrow(
-			"No 'text' system registered",
-		);
-	});
-
-	it("should not update the source or text system during sync", () => {
-		let text = "TEXT";
-		let updated = false;
-
-		registerSyncSystem(SyncSystem.Text, {
-			get: () => text,
-			set: (v) => {
-				updated = true;
-				text = v;
+		registerSyncSystem<boolean, string>(
+			{
+				id: "a",
+				get: () => systemA,
+				set: (v) => (systemA = v),
+				serialize: (val) => (val ? "true" : "false"),
+				deserialize: (t) => (t === "true" ? true : false),
 			},
+			SyncSystem.Text,
+		);
+
+		registerSyncSystem<number, string>(
+			{
+				id: "b",
+				get: () => systemB,
+				set: (v) => (systemB = v),
+				serialize: (val) => (val !== 0 ? "true" : "false"),
+				deserialize: (t) => (t === "true" ? 1 : 0),
+			},
+			SyncSystem.Text,
+		);
+
+		syncFrom("a");
+
+		expect(text).toBe("false");
+		expect(systemB).toBe(0);
+	});
+
+	it("Sync System branch - sync test", () => {
+		let text = "true";
+		let systemA = false;
+		let systemB = 1;
+
+		registerSyncSystem({
+			id: SyncSystem.Text,
+			get: () => text,
+			set: (v) => (text = v),
 			serialize: (v) => v,
 			deserialize: (t) => t,
 		});
 
-		registerSyncSystem("a", {
-			get: () => "A",
-			set: jest.fn(),
-			serialize: (v) => v,
-			deserialize: jest.fn(() => "sync-A"),
-		});
+		registerSyncSystem<boolean, string>(
+			{
+				id: "a",
+				get: () => systemA,
+				set: (v) => (systemA = v),
+				serialize: (val) => (val ? "true" : "false"),
+				deserialize: (t) => (t === "true" ? true : false),
+			},
+			SyncSystem.Text,
+		);
 
-		synchronize("a");
-		expect(updated).toBe(false); // ensure text system is untouched
+		registerSyncSystem<number, boolean>(
+			{
+				id: "b",
+				get: () => systemB,
+				set: (v) => (systemB = v),
+				serialize: (val) => (val !== 0 ? true : false),
+				deserialize: (t) => (t ? 1 : 0),
+			},
+			"a",
+		);
+
+		syncFrom("a");
+
+		expect(text).toBe("false");
+		expect(systemB).toBe(0);
+	});
+
+	it("should gracefully handle missing adapters", () => {
+		// No adapter registered
+		expect(() => syncFrom("unknown")).toThrow(
+			`Sync system "unknown" not found.`,
+		);
 	});
 });

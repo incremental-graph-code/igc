@@ -34,7 +34,7 @@ import {
 import CustomConnectionLine, {
 	connectionLineStyle,
 } from "../../IGCItems/relationships/CustomConnectionLine";
-import { Item } from "@/types/frontend";
+import { Item, ItemType } from "@/types/frontend";
 import useStore from "@/store/store";
 import FilterPane from "../FilterPane";
 import { runAllAnalysis } from "@/utils/codeExecution";
@@ -54,26 +54,48 @@ import { isGraphNode } from "@/IGCItems/nodes/GraphNode";
 import { fileExists } from "@/requests";
 
 import { toSvg } from "html-to-image";
-import _ from 'lodash';
+import _ from "lodash";
+import { useSyncSystem } from "@/hooks/useSyncSystem";
+import { IGCGraph } from "@/types/graph";
+import { graphToText, textToGraph } from "@/adapters/graph";
+import { SyncSystem } from "@/adapters/consts";
+import { createIGCGraph } from "@/utils/graph";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useRenderDebugger } from "@/hooks/useRenderDebugger";
+import { createStoreSetterWithGuard } from "@/store/utils";
 
 const GraphEditor: React.FC = () => {
 	// VARIABLES
 	// Store variables
-	const fileContent = useStore((state) => state.fileContent);
-	const selectedFile = useStore((state) => state.selectedFile);
-	const isIGCFile = useStore((state) => state.isIGCFile);
+	const fileData = useStore((state) => state.fileData);
+
+	// Selected Items
 	const setSelectedItems = useStore((state) => state.setSelectedItems);
 	const selectedItem = useStore((state) => state.selectedItem);
-	const getNodes = useStore((state) => state.getNodes);
-	const setNodes = useStore((state) => state.setNodes);
-	const getEdges = useStore((state) => state.getEdges);
-	const setEdges = useStore((state) => state.setEdges);
+
+	// Graph Data
+	const graph = useStore((state) => state.graph);
+	const isIGC = graph !== null; //isIGCFile(fileData);
+	const isExternalUpdate = useRef(false);
+
+	// Node and Edge Functions
+	// const getNodes = useStore((state) => state.getNodes);
+	// const sNodes = useStore((state) => state.sNodes);
+	// const getEdges = useStore((state) => state.getEdges);
+	// const sEdges = useStore((state) => state.sEdges);
+
+	// Session Id
 	const currentSessionId = useStore((state) => state.currentSessionId);
+
+	// Node Types
 	const nodeTypes = useStore((state) => state.nodeTypes);
 	const relationshipTypes = useStore((state) => state.relationshipTypes);
 
-	const nodes = selectedFile === null ? [] : getNodes(selectedFile);
-	const edges = selectedFile === null ? [] : getEdges(selectedFile);
+	// Local state to prevent massive rerendering
+	const [nodes, setNodes] = useState<Node[]>(isIGC ? graph.nodes : []);
+	const [relationships, setRelationships] = useState<Edge[]>(
+		isIGC ? graph.relationships : [],
+	);
 
 	// STATE
 	const [showGraph, setShowGraph] = useState(false); // If the graph should show up or not
@@ -86,76 +108,133 @@ const GraphEditor: React.FC = () => {
 	const reactFlowWrapper = useRef<HTMLDivElement>(null);
 	const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
+	// HOOKS
+	const triggerUpdate = useSyncSystem<IGCGraph, string>(
+		{
+			id: SyncSystem.Graph,
+			get: () => useStore.getState().graph,
+			set: createStoreSetterWithGuard(
+				() => useStore.getState().graph,
+				(graph: IGCGraph) => useStore.getState().setGraph(graph),
+			),
+			serialize: graphToText,
+			deserialize: textToGraph,
+		},
+		SyncSystem.Text,
+	);
+
+	// Update sync system with graph updates
+	useDebounce(
+		() => {
+			if (isExternalUpdate.current || !isIGC) {
+				return;
+			}
+			const newGraph = createIGCGraph(
+				nodes,
+				relationships,
+				graph.sessions,
+			);
+			triggerUpdate(newGraph);
+		},
+		300,
+		[nodes, relationships],
+	);
+
+	useEffect(() => {
+		if (!isIGC) {
+			return;
+		}
+
+		// isExternalUpdate.current = true;
+		setNodes(graph.nodes);
+		setRelationships(graph.relationships);
+	}, [graph]);
+
 	// Shows the graph if the file is a valid IGC file
 	useEffect(() => {
-		if (fileContent !== null && isIGCFile) {
+		if (isIGC) {
 			setShowGraph(true);
 		} else {
 			setShowGraph(false);
 		}
-	}, [fileContent]);
+	}, [isIGC]);
 
 	// If a node is changed, check to see if there are any selection changes
 	useEffect(() => {
 		// Look at which nodes are selected
 		const newSelectedNodes: Node[] = nodes.filter((node) => node.selected);
 
-        // REMOVE WHEN SYNCING IS DONE
-        if(_.isEqual(_.sortBy(newSelectedNodes.map(n => n.id)), _.sortBy(selectedNodes.map(n => n.id)))) {
-            return;
-        }
+		// // REMOVE WHEN SYNCING IS DONE
+		// if (
+		// 	_.isEqual(
+		// 		_.sortBy(newSelectedNodes.map((n) => n.id)),
+		// 		_.sortBy(selectedNodes.map((n) => n.id)),
+		// 	)
+		// ) {
+		// 	return;
+		// }
 		setSelectedNodes(newSelectedNodes);
 	}, [nodes]);
 
 	// If an edge is changed, check to see if there are any selection changes
 	useEffect(() => {
-		const newSelectedEdges: Edge[] = edges.filter((edge) => edge.selected);
+		const newSelectedEdges: Edge[] = relationships.filter(
+			(edge) => edge.selected,
+		);
 
-        // REMOVE WHEN SYNCING IS DONE
-        if(_.isEqual(_.sortBy(newSelectedEdges.map(e => e.id)), _.sortBy(selectedEdges.map(e => e.id)))) {
-            return;
-        }
+		// // REMOVE WHEN SYNCING IS DONE
+		// if (
+		// 	_.isEqual(
+		// 		_.sortBy(newSelectedEdges.map((e) => e.id)),
+		// 		_.sortBy(selectedEdges.map((e) => e.id)),
+		// 	)
+		// ) {
+		// 	return;
+		// }
 		setSelectedEdges(newSelectedEdges);
-	}, [edges]);
+	}, [relationships]);
 
-	useEffect(() => {
-		if (useStore.getState().waitForSelection) {
-			const curFile = useStore.getState().selectedFile;
-			if (selectedNodes.length > 0 && curFile !== null) {
-				useStore.getState().setChosenNode(() => selectedNodes[0]);
-				setNodes(curFile, (nds) => {
-					return nds.map((node) => {
-						if (node.id === selectedNodes[0].id) {
-							node.selected = false;
-						}
-						return node;
-					});
-				});
-			}
-		}
-	}, [selectedNodes, setNodes]);
+	// useEffect(() => {
+	// 	// if (useStore.getState().waitForSelection) {
+	// 	// const curFile = useStore.getState().selectedFile;
+
+	// 	// NOTE: Need to check if this will only run if the selected nodes have changed, or just when the address changes. To be debugged further.
+	// 	if (selectedNodes.length > 0 && isIGC) {
+	// 		useStore.getState().setChosenNode(() => selectedNodes[0]);
+	// 		// setNodes((nds) => {
+	// 		// 	return nds.map((node) => {
+	// 		// 		if (node.id !== selectedNodes[0].id) {
+	// 		// 			node.selected = false;
+	// 		// 		}
+	// 		// 		return node;
+	// 		// 	});
+	// 		// });
+	// 	}
+	// 	// }
+	// }, [selectedNodes]);
 
 	// When new selections are being made, update the selected items
+	// NOTE ABOVE
 	useEffect(() => {
-		if (!useStore.getState().waitForSelection) {
-			const items: Item[] = [];
-			selectedNodes.forEach((node) => {
-				items.push({
-					item: { type: "node", object: node },
-					id: node.id,
-					name: node.data.label,
-				});
+		// if (!useStore.getState().waitForSelection) {
+		const items: Item[] = [];
+		selectedNodes.forEach((node) => {
+			items.push({
+				item: { type: ItemType.node, object: node },
+				id: node.id,
+				name: node.data.label,
 			});
+		});
 
-			selectedEdges.forEach((edge) => {
-				items.push({
-					item: { type: "relationship", object: edge },
-					id: edge.id,
-					name: edge.id,
-				});
+		selectedEdges.forEach((edge) => {
+			items.push({
+				item: { type: ItemType.relationship, object: edge },
+				id: edge.id,
+				name: edge.id,
 			});
-			setSelectedItems(() => items);
-		}
+		});
+		setSelectedItems(() => items);
+		// }
 	}, [selectedNodes, selectedEdges, setSelectedItems]);
 
 	useEffect(() => {
@@ -174,7 +253,7 @@ const GraphEditor: React.FC = () => {
 		return convertMapToTrueEdgeTypes(relationshipTypes);
 	}, [relationshipTypes]);
 
-	if (selectedFile === null) {
+	if (!isIGC) {
 		return (
 			<div className="editor-pane">
 				<div className="navbar-component">
@@ -195,21 +274,24 @@ const GraphEditor: React.FC = () => {
 
 	// Node Functions
 	const onNodesDelete = async (nodes: Node[]) => {
+		isExternalUpdate.current = false;
 		console.log("Nodes deleted:", nodes);
 		if (currentSessionId !== null) {
 			for (let i = 0; i < nodes.length; i++) {
-				await removeNodeInSession(selectedFile, nodes[i].id);
+				await removeNodeInSession(fileData.filePath, nodes[i].id);
 			}
 		}
 	};
 	const onNodesChange = async (changes: NodeChange[]) => {
-		setNodes(selectedFile, (nds) => applyNodeChanges(changes, nds));
+		// isExternalUpdate.current = false;
+		setNodes((nds) => applyNodeChanges(changes, nds));
 	};
 
 	// Add a new node
 	const handleAddNode = () => {
-		// Select the new node and deselect all other nodes/edges
-		setNodes(selectedFile, (nodes) => {
+		isExternalUpdate.current = false;
+		// Select the new node and deselect all other nodes/relationships
+		setNodes((nodes) => {
 			const newNode: Node<IGCNodeData> = createBaseNode(nodes);
 
 			const newNodes = nodes.map((node) => {
@@ -218,10 +300,10 @@ const GraphEditor: React.FC = () => {
 			});
 			return [...newNodes, newNode];
 		});
-		setEdges(selectedFile, (edges) => {
-			const newEdges = edges.map((edge) => {
-				edge.selected = false;
-				return edge;
+		setRelationships((relationships) => {
+			const newEdges = relationships.map((r) => {
+				r.selected = false;
+				return r;
 			});
 			return [...newEdges];
 		});
@@ -283,7 +365,7 @@ const GraphEditor: React.FC = () => {
 				// Convert SVG to Blob and download
 				const blob = new Blob([embeddedSVG], { type: "image/svg+xml" });
 				const url = URL.createObjectURL(blob);
-				downloadImage(url, "svg", `${selectedFile}_IGC_diagram`);
+				downloadImage(url, "svg", `${fileData.filePath}_IGC_diagram`);
 				URL.revokeObjectURL(url);
 			});
 		}
@@ -402,7 +484,8 @@ const GraphEditor: React.FC = () => {
 	//   };
 
 	// Edge Functions
-	const onEdgesDelete = async (edges: Edge[]) => {
+	const onRelationshipsDelete = async (relationships: Edge[]) => {
+		isExternalUpdate.current = false;
 		const selectedItems = useStore.getState().selectedItems;
 		const selectedNodeIds: string[] = selectedItems.reduce<string[]>(
 			(acc, item) => {
@@ -413,8 +496,8 @@ const GraphEditor: React.FC = () => {
 			},
 			[],
 		);
-		for (let i = 0; i < edges.length; i++) {
-			const edge = edges[i];
+		for (let i = 0; i < relationships.length; i++) {
+			const edge = relationships[i];
 			if (
 				edge.type === "ExecutionRelationship" &&
 				!(
@@ -430,7 +513,7 @@ const GraphEditor: React.FC = () => {
 					!isNaN(parseInt(edge.data.label))
 				) {
 					removeExecutionInSession(
-						selectedFile,
+						fileData.filePath,
 						currentSessionId,
 						parseInt(edge.data.label),
 					);
@@ -438,8 +521,9 @@ const GraphEditor: React.FC = () => {
 			}
 		}
 	};
-	const onEdgesChange = async (changes: EdgeChange[]) => {
-		setEdges(selectedFile, (eds) => {
+	const onRelationshipsChange = async (changes: EdgeChange[]) => {
+		isExternalUpdate.current = false;
+		setRelationships((eds) => {
 			return applyEdgeChanges(changes, eds);
 		});
 		// // Update session data
@@ -448,12 +532,13 @@ const GraphEditor: React.FC = () => {
 
 	// If a new edge is created
 	const onConnect = (params: Edge | Connection) => {
+		isExternalUpdate.current = false;
 		const { source, target } = params;
 
 		// Custom logic to handle the connection
 		if (source !== null && target !== null) {
 			console.log(`Creating connection from ${source} to ${target}`);
-			setEdges(selectedFile, (eds) =>
+			setRelationships((eds) =>
 				addEdge(
 					{
 						...params,
@@ -467,7 +552,7 @@ const GraphEditor: React.FC = () => {
 					}),
 				),
 			);
-			setNodes(selectedFile, (nodes) => {
+			setNodes((nodes) => {
 				const newNodes = nodes.map((node) => {
 					node.selected = false;
 					return node;
@@ -501,6 +586,7 @@ const GraphEditor: React.FC = () => {
 	};
 
 	const onNodeDoubleClick = async (event: React.MouseEvent, node: Node) => {
+		isExternalUpdate.current = false;
 		console.log("Node double clicked", node);
 		console.log("Event", event);
 		if (isGraphNode(node)) {
@@ -510,7 +596,7 @@ const GraphEditor: React.FC = () => {
 					console.log("File does not exist");
 					return;
 				}
-				useStore.getState().setSelectedFile(() => node.data.filePath);
+				useStore.getState().loadFile(node.data.filePath);
 			}
 		}
 	};
@@ -521,7 +607,7 @@ const GraphEditor: React.FC = () => {
 				<span className="navbar-component-title take-full-width">
 					Graph Editor
 				</span>
-				{isIGCFile && (
+				{isIGC && (
 					<>
 						<Button
 							startIcon={<AddCircle />}
@@ -534,7 +620,7 @@ const GraphEditor: React.FC = () => {
 						<button
 							className="icon-button"
 							title="Play Current Execution"
-							onClick={() => refreshSession(selectedFile)}
+							onClick={() => refreshSession(fileData.filePath)}
 						>
 							<PlayArrow />
 						</button>
@@ -573,11 +659,11 @@ const GraphEditor: React.FC = () => {
 					<ReactFlowProvider>
 						<ReactFlow
 							nodes={nodes}
-							edges={edges}
+							edges={relationships}
 							onNodesChange={onNodesChange}
-							onEdgesChange={onEdgesChange}
+							onEdgesChange={onRelationshipsChange}
 							onNodesDelete={onNodesDelete}
-							onEdgesDelete={onEdgesDelete}
+							onEdgesDelete={onRelationshipsDelete}
 							onConnect={onConnect}
 							nodeTypes={getNodeTypes}
 							onNodeDoubleClick={onNodeDoubleClick}

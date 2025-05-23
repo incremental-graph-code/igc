@@ -5,14 +5,18 @@ import { Node, Edge } from "reactflow";
 import { FileNode } from "shared";
 import { ReactNode } from "react";
 
+export enum ItemType {
+	node = "node",
+	relationship = "relationship",
+}
 
 interface NodeItemObject {
-	type: "node";
+	type: ItemType.node;
 	object: Node;
 }
 
 interface RelationshipItemObject {
-	type: "relationship";
+	type: ItemType.relationship;
 	object: Edge;
 }
 
@@ -107,35 +111,37 @@ export interface TreeItemState {
 
 export interface RegistryComponent {
 	key: string;
-    displayName: string;
+	displayName: string;
 	color: string;
 	type: "node" | "relationship" | "view";
 	settable: boolean; // Default is false
-    typeSymbol: string;
-    abstract?: boolean; // Default is false
-    typeHierarchy?: string[]; // Default is []
+	typeSymbol: string;
+	abstract?: boolean; // Default is false
+	typeHierarchy?: string[]; // Default is []
 }
 
-export type ModuleComponentValues<T=RegistryComponent> = {
+export type ModuleComponentValues<T = RegistryComponent> = {
 	object: T;
 	modulePath: string;
 	enabled: boolean;
 };
-export type ModuleComponent<T=RegistryComponent> = {
+export type ModuleComponent<T = RegistryComponent> = {
 	[key: string]: ModuleComponentValues<T>;
 };
 
-export interface ModuleComponentStored<T={}> {
+export interface ModuleComponentStored<T = {}> {
 	nodes: ModuleComponent<IGCNodeProps<T> & RegistryComponent>;
 	relationships: ModuleComponent<IGCRelationshipProps<T> & RegistryComponent>;
 	views: ModuleComponent<IGCViewProps<T> & RegistryComponent>;
 }
 
-export type IGCComponent<T={}> = IGCNodeProps<T> | IGCRelationshipProps<T> | IGCViewProps<T>;
-
+export type IGCComponent<T = {}> =
+	| IGCNodeProps<T>
+	| IGCRelationshipProps<T>
+	| IGCViewProps<T>;
 
 export interface ElementItem {
-    key: string;
-    weight: number;
-    element: ReactNode;
+	key: string;
+	weight: number;
+	element: ReactNode;
 }

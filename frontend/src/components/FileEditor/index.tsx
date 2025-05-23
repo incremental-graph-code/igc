@@ -16,6 +16,7 @@ import { serializeGraphData } from "@/IGCItems/utils/serialization";
 import { Node, Edge } from "reactflow";
 import { isComponentOfType } from "@/IGCItems/utils/utils";
 import GeneralTextView from "@/IGCItems/views/GeneralTextView";
+import { isIGCFile } from "@/utils/file";
 
 interface FileEditorProps {
 	openConfirmDialog: (
@@ -40,15 +41,9 @@ const componentIncludes = (
 
 const FileEditor: React.FC<FileEditorProps> = (props) => {
 	// Memoized store values to prevent unnecessary re-renders
-	const selectedFile = useStore((state) => state.selectedFile);
-	const fileContent = useStore((state) => state.fileContent);
-	const fileChanged = useStore((state) => state.fileChanged);
-	const setHasEditorInitialized = useStore(
-		(state) => state.setHasEditorInitialized,
-	);
-	const isIGCFile = useStore((state) => state.isIGCFile);
-	const setSavedNodes = useStore((state) => state.setSavedNodes);
-	const setSavedEdges = useStore((state) => state.setSavedEdges);
+	// const fileData = useStore((state) => state.fileData);
+	// const isIGC = isIGCFile(fileData);
+	
 	const selectedItem = useStore(
 		(state) => state.selectedItem,
 		(prev, next) => prev?.id === next?.id,
@@ -188,56 +183,56 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 	// }, [navBarContainer]);
 
 	// Effect to initialize the editor when file changes
-	useEffect(() => {
-		if (
-			fileContent !== null &&
-			isIGCFile &&
-			selectedFile !== null &&
-			!useStore.getState().hasEditor[selectedFile]
-		) {
-			setHasEditorInitialized(selectedFile);
-			const serializedData = serializeGraphData(fileContent);
-			useStore
-				.getState()
-				.setNodes(selectedFile, () => serializedData.nodes);
-			useStore
-				.getState()
-				.setEdges(selectedFile, () => serializedData.edges);
+	// useEffect(() => {
+	// 	if (
+	// 		fileContent !== null &&
+	// 		isIGCFile &&
+	// 		selectedFile !== null &&
+	// 		!useStore.getState().hasEditor[selectedFile]
+	// 	) {
+	// 		setHasEditorInitialized(selectedFile);
+	// 		const serializedData = serializeGraphData(fileContent);
+	// 		useStore
+	// 			.getState()
+	// 			.sNodes(selectedFile, () => serializedData.nodes);
+	// 		useStore
+	// 			.getState()
+	// 			.sEdges(selectedFile, () => serializedData.edges);
 
-			// Copy of the data to prevent references
-			const serializedData2 = serializeGraphData(fileContent);
+	// 		// Copy of the data to prevent references
+	// 		const serializedData2 = serializeGraphData(fileContent);
 
-			setSavedNodes(selectedFile, () =>
-				serializedData2.nodes.reduce<{ [id: string]: Node }>(
-					(acc, node) => {
-						acc[node.id] = node;
-						return acc;
-					},
-					{},
-				),
-			);
+	// 		setSavedNodes(selectedFile, () =>
+	// 			serializedData2.nodes.reduce<{ [id: string]: Node }>(
+	// 				(acc, node) => {
+	// 					acc[node.id] = node;
+	// 					return acc;
+	// 				},
+	// 				{},
+	// 			),
+	// 		);
 
-			setSavedEdges(selectedFile, () =>
-				serializedData2.edges.reduce<{ [id: string]: Edge }>(
-					(acc, edge) => {
-						acc[edge.id] = edge;
-						return acc;
-					},
-					{},
-				),
-			);
+	// 		setSavedEdges(selectedFile, () =>
+	// 			serializedData2.edges.reduce<{ [id: string]: Edge }>(
+	// 				(acc, edge) => {
+	// 					acc[edge.id] = edge;
+	// 					return acc;
+	// 				},
+	// 				{},
+	// 			),
+	// 		);
 
-			loadSessionData(selectedFile);
-		}
-	}, [
-		fileChanged,
-		fileContent,
-		isIGCFile,
-		selectedFile,
-		setHasEditorInitialized,
-		setSavedEdges,
-		setSavedNodes,
-	]);
+	// 		loadSessionData(selectedFile);
+	// 	}
+	// }, [
+	// 	fileChanged,
+	// 	fileContent,
+	// 	isIGCFile,
+	// 	selectedFile,
+	// 	setHasEditorInitialized,
+	// 	setSavedEdges,
+	// 	setSavedNodes,
+	// ]);
 
 	return (
 		<ResizableBox

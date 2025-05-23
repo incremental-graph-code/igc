@@ -8,18 +8,32 @@ import React from "react";
 import Editor from "@/components/Editor";
 import { saveFileContent } from "@/requests";
 import { editor } from "monaco-editor";
-import { deserializeGraphData } from "@/IGCItems/utils/serialization";
-
+import { deserializeGraphData, isValidJSON } from "@/IGCItems/utils/serialization";
+import { updateSyncSystem } from "@/utils/syncRegistry";
+import { SyncSystem } from "@/adapters/consts";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 
 const RawGeneralTextView: React.FC = () => {
 	// Get data store variables
-	const selectedFile = useStore((state) => state.selectedFile);
-	const isIGCFile = useStore((state) => state.isIGCFile);
+	const fileData = useStore((state) => state.fileData);
+	const bufferText = useStore((state) => state.bufferText);
+	const isIGCFile = useStore.getState().graph !== null;
 
-	// Check if a file is loaded
-	if (selectedFile === null) {
-		return <div className="text-display">No File Selected</div>;
-	}
+	const syncDebounce = useDebouncedCallback((value: string) => {
+        if (isValidJSON(value)) {
+            updateSyncSystem(SyncSystem.Text, value);
+        }
+    }, 500);
+
+	const saveLogic = (content: string) => {
+		if (fileData === null || content === undefined) {
+			return;
+		}
+		// EDIT WHEN SYNC REGISTRY IMPLEMENTED
+		// saveFileContent(fileData.filePath, content).then(() => {
+		// 	//useStore.getState().updateFileContent(() => content);
+		// });
+	};
 
 	// // const { selectedFile, fileContent, mode } = useStore();
 	// const selectedFile = useStore((state) => state.selectedFile);
@@ -84,8 +98,8 @@ const RawGeneralTextView: React.FC = () => {
 	// 			isValidJSON(curContent)
 	// 		) {
 	// 			const serializedData = serializeGraphData(curContent);
-	// 			useStore.getState().setNodes(sFile, () => serializedData.nodes);
-	// 			useStore.getState().setEdges(sFile, () => serializedData.edges);
+	// 			useStore.getState().sNodes(sFile, () => serializedData.nodes);
+	// 			useStore.getState().sEdges(sFile, () => serializedData.edges);
 	// 		}
 	// 	}
 	// };
@@ -147,46 +161,46 @@ const RawGeneralTextView: React.FC = () => {
 	// if (fileContent === null || selectedFile === null) {
 	// 	return <div className="text-display">No File Selected</div>;
 	// }
-	const saveLogic = (content: string) => {
-        if (selectedFile === null || content === undefined) {
-            return;
-        }
-		// EDIT WHEN SYNC REGISTRY IMPLEMENTED
-		saveFileContent(selectedFile, content).then(() => {
-			useStore.getState().updateFileContent(() => content);
-		});
-	};
 
-    const onMount = (editor: editor.IStandaloneCodeEditor) => {
-        if(isIGCFile) {
-            const curModel = editor.getModel();
-            if (curModel === null) {
-                return;
-            }
-            const fullRange = curModel.getFullModelRange();
-            const edits: editor.IIdentifiedSingleEditOperation[] = [
-                {
-                  range: fullRange,
-                  text: deserializeGraphData(
-                    useStore.getState().getNodes(selectedFile),
-                    useStore.getState().getEdges(selectedFile),
-                  ),
-                  forceMoveMarkers: true, // keep markers (breakpoints, squiggles, etc.) aligned
-                },
-              ];
-            curModel.pushEditOperations(null, edits, () => null)
-        }
-    }
+	// const onMount = (editor: editor.IStandaloneCodeEditor) => {
+	//     if(isIGCFile) {
+	//         const curModel = editor.getModel();
+	//         if (curModel === null) {
+	//             return;
+	//         }
+	//         const fullRange = curModel.getFullModelRange();
+	//         const edits: editor.IIdentifiedSingleEditOperation[] = [
+	//             {
+	//               range: fullRange,
+	//               text: useStore.getState().bufferText,
+	//               forceMoveMarkers: true, // keep markers (breakpoints, squiggles, etc.) aligned
+	//             },
+	//           ];
+	//         curModel.pushEditOperations(null, edits, () => null)
+	//     }
+	// }
+
+	// Check if a file is loaded
+	if (fileData === null) {
+		return <div className="text-display">No File Selected</div>;
+	}
 
 	return (
 		<Editor
-			editorId={selectedFile}
-			{...(isIGCFile && { language: "json" })}
+			editorId={fileData.filePath}
+			{...(isIGCFile && {
+				language: "json",
+				sync: {
+					currentContent: bufferText,
+					triggerUpdate: (value) => syncDebounce(value),
+				},
+			})}
 			getSavedContent={() => {
-				return useStore.getState().fileContent || "";
+				return useStore.getState().fileData.initialContent;
 			}}
 			saveLogic={saveLogic}
-            onMount={onMount}
+			initialContent={bufferText}
+			// onMount={onMount}
 		/>
 	);
 };

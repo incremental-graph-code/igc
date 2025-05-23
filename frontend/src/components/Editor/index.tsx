@@ -1,155 +1,226 @@
-import React, { useCallback, useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import { useRenderDebugger } from "@/hooks/useRenderDebugger";
 import { Editor as MonacoEditor } from "@monaco-editor/react";
 import useStore from "@/store/store";
 import { editor } from "monaco-editor";
-
-// import { debounce } from 'lodash';
-import { useSaveIndicator } from "@/hooks/useSaveIndicator";
+import { FileSaveStatus, useSaveIndicator } from "@/hooks/useSaveIndicator";
 import {
 	GlobalKeyDownContext,
 	KeyPressListener,
 } from "@/providers/GlobalKeyDownProvider";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 
+/**
+ * A generic Monaco-based editor component that supports:
+ * - Save status tracking
+ * - Keyboard shortcuts (e.g. Ctrl/Cmd+S)
+ * - Content change detection and history
+ * - Integration with external sync systems
+ *
+ * Designed for reuse across different editing contexts (text, snippet, etc.)
+ */
 interface EditorProps {
+	/**
+	 * Unique identifier for this editor instance (used for tracking/save indicator)
+	 */
 	editorId: string;
+
+	/**
+	 * Monaco language ID (e.g. "javascript", "json", "plaintext")
+	 */
 	language?: string;
+
+	/**
+	 * Optional getter for the "saved" content version to compare against for status display.
+	 * Must return a consistent value during the lifetime of the editor to avoid unnecessary re-renders.
+	 */
 	getSavedContent?: () => string;
-	saveLogic?: (string) => void;
+
+	/**
+	 * Optional custom save logic called when user presses Ctrl+S / Cmd+S
+	 */
+	saveLogic?: (text: string | undefined) => void;
+
+	/**
+	 * Optional callback for text changes
+	 */
 	onChange?: (
 		value: string | undefined,
 		event: editor.IModelContentChangedEvent,
 	) => void;
+
+	/**
+	 * Optional callback when the Monaco editor is mounted
+	 */
 	onMount?: (editor: editor.IStandaloneCodeEditor) => void;
+
+	/**
+	 * Optional trigger function from useSyncSystem (e.g. for 'text' or 'snippet')
+	 * Called after onChange to notify other sync systems
+	 */
+	triggerSyncUpdate?: () => void;
+
+	/**
+	 * Optionally override the initial editor content
+	 * If undefined, falls back to `getSavedContent()`
+	 */
+	initialContent?: string;
+
+	/**
+	 * Optional sync integration object for live syncing
+	 */
+	sync?: {
+		/**
+		 * Latest content from the store (used to sync into the editor)
+		 */
+		currentContent: string;
+
+		/**
+		 * Trigger the sync system; optionally updates the store first
+		 */
+		triggerUpdate: (value: string) => void;
+	};
 }
-/**
- * Text editor component that uses Monaco Editor to provide syntax highlighting and other features.
- * @param props
- * @returns
- */
+
+const addModelUpdate = (model: editor.ITextModel, value: string) => {
+	const fullRange = model.getFullModelRange();
+	const edits: editor.IIdentifiedSingleEditOperation[] = [
+		{
+			range: fullRange,
+			text: value,
+			forceMoveMarkers: true, // keep markers (breakpoints, squiggles, etc.) aligned
+		},
+	];
+	model.pushEditOperations(null, edits, () => null);
+};
+
 const Editor = (props: EditorProps) => {
-	let { getSavedContent, saveLogic } = props;
+	const {
+		editorId,
+		getSavedContent,
+		saveLogic = () => {},
+		onChange,
+		onMount,
+		initialContent,
+		language,
+		sync,
+	} = props;
 
 	// Track the number of renders for performance testing
-	useRenderDebugger(`Editor: ${props.editorId}`, props);
+	useRenderDebugger(`Editor: ${editorId}`, props);
+
+	// Check if the sync system has edited the model
+	const isExternalUpdate = useRef(false);
+
+	// Store the editor
+	const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
 	// State variables
 	const [content, setContent] = React.useState<string | undefined>(undefined);
 
 	// Subscribe to key press events
 	const globalKeyCtx = useContext(GlobalKeyDownContext);
+	const mode = useStore((state) => state.mode);
 
-	// Focus event
-	const handleFocus = () => {
-		// Set the editor as the key owner
-		globalKeyCtx?.setRawKeyOwner(props.editorId);
-	};
-	// Blur event
-	const handleBlur = () => {
-		// Clear the key owner
-		globalKeyCtx?.setRawKeyOwner(null);
-	};
+	// Sync with save indicator
+	useSaveIndicator(editorId, () => {
+		try {
+			if (!getSavedContent) return FileSaveStatus.None;
 
-	// Provide default logic if none is provided
-	if (getSavedContent === undefined) {
-		getSavedContent = () => "test";
-	}
-	if (saveLogic === undefined) {
-		saveLogic = () => {};
-	}
+			const saved = getSavedContent();
+			if (content === undefined) return FileSaveStatus.None;
+			if (content === saved) return FileSaveStatus.Saved;
+			return FileSaveStatus.Unsaved;
+		} catch {
+			return FileSaveStatus.Error;
+		}
+	});
 
-	// Handle save logic
+	// Save shortcut (Cmd/Ctrl + S)
 	const handleSaveShortcut = useCallback<KeyPressListener>(
 		(ev) => {
-			const isSaveCombo =
-				(ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s";
-
-			// Bail if it is not the save combo
-			if (
-				!isSaveCombo
-			)
-				return;
-
-			ev.preventDefault();
-			ev.stopPropagation();
-
-            // Call the save logic
-			saveLogic(content);
+			if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") {
+				ev.preventDefault();
+				ev.stopPropagation();
+				saveLogic(content);
+			}
 		},
 		[saveLogic, content],
 	);
 
-	// Get theme mode
-	const mode = useStore((state) => state.mode);
+	// Global key context subscription
+	useEffect(() => {
+		if (!globalKeyCtx) return;
+		const unsubscribe = globalKeyCtx.subscribe(handleSaveShortcut);
+		return () => unsubscribe();
+	}, [globalKeyCtx, handleSaveShortcut]);
 
-	/* Indicators */
-	// Save Indicator
-	useSaveIndicator(props.editorId, () => {
-		try {
-			// Get saved content and compare with current value
-			const savedContent = getSavedContent();
-			if (content === undefined) {
-				return "none";
-			} else if (content === savedContent) {
-				return "saved";
-			}
-			return "unsaved";
-		} catch {
-			// Set the file save status to error
-			return "error";
+	useEffect(() => {
+		if (!sync) return;
+		const model = editorRef.current?.getModel();
+		if (!model) return;
+
+		const currentValue = model.getValue();
+		if (currentValue !== sync.currentContent) {
+			isExternalUpdate.current = true;
+			addModelUpdate(model, sync.currentContent);
 		}
-	});
+	}, [sync?.currentContent]);
 
-	// // Use Effect functions
-	// useEffect(() => {
-	//     // Update the save indicator
-	//     debounce(() => {
-	//         // Get saved content and compare with current value
-	//         const savedContent = getSavedContent();
-	//         if (savedContent !== content) {
-	//             // Set the file save status to unsaved
-	//         } else {
-	//             // Set the file save status to saved
-	//         }
-	//       }, 300),
-	//       [getSavedContent]
-	// }, [content]);
+	// Focus / blur tracking
+	const handleFocus = () => {
+		globalKeyCtx?.setRawKeyOwner(editorId);
+	};
+	const handleBlur = () => {
+		globalKeyCtx?.setRawKeyOwner(null);
+	};
 
-	// On Change code
-	const onChange = (
+	// Handle editor change
+	const handleChange = (
 		value: string | undefined,
 		event: editor.IModelContentChangedEvent,
 	) => {
-		setContent(value);
-		props.onChange?.(value, event);
-	};
-
-	// On Mount code
-	const onMount = (editor: editor.IStandaloneCodeEditor) => {
-		const curModel = editor.getModel();
-		if (curModel === null) {
+		if (isExternalUpdate.current) {
+			isExternalUpdate.current = false;
 			return;
 		}
-		setContent(curModel.getValue());
-		props.onMount?.(editor);
+
+		setContent(value);
+		onChange?.(value, event);
+
+		// Trigger sync update if applicable
+		if (sync) {
+			sync.triggerUpdate(value ?? "");
+		}
+	};
+
+	// Handle editor mount
+	const handleMount = (editor: editor.IStandaloneCodeEditor) => {
+		editorRef.current = editor;
+		const curModel = editor.getModel();
+		if (curModel === null) {
+			// Initial loading of editor
+			setContent(initialContent ?? getSavedContent?.());
+		} else {
+			// Model already exists
+			const value = curModel.getValue();
+
+			// Check if the sync system updated the model
+			if (sync !== undefined && value !== sync.currentContent) {
+				// Update the editor model with the latest content
+				addModelUpdate(curModel, sync.currentContent);
+				setContent(sync.currentContent);
+			} else {
+				setContent(value);
+			}
+		}
+		onMount?.(editor);
 
 		// Custom editor widgets
 		editor.onDidFocusEditorWidget(handleFocus);
 		editor.onDidBlurEditorWidget(handleBlur);
 	};
-
-	// Subscribe to global keydown context and forward to editor
-	useEffect(() => {
-		if (!globalKeyCtx) return;
-
-		const unsubscribe = globalKeyCtx.subscribe(handleSaveShortcut);
-		// const unsubscribe = globalKeyCtx.subscribe(() => {
-		// 	if (!editor) return;
-		// });
-
-		return () => unsubscribe();
-	}, [globalKeyCtx, handleSaveShortcut]);
 
 	return (
 		<Box
@@ -162,13 +233,13 @@ const Editor = (props: EditorProps) => {
 			}}
 		>
 			<MonacoEditor
-				path={props.editorId}
+				path={editorId}
 				height="100%"
-				defaultLanguage={props.language}
-				defaultValue={getSavedContent()}
 				theme={mode === "light" ? "light" : "vs-dark"}
-				onChange={onChange}
-				onMount={onMount}
+				defaultLanguage={language}
+				defaultValue={initialContent ?? getSavedContent?.()}
+				onChange={handleChange}
+				onMount={handleMount}
 			/>
 		</Box>
 	);

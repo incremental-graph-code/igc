@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { NodeRendererProps } from "react-arborist";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -30,11 +30,19 @@ type Action =
 	| "copyRelPath"
 	| "delete";
 
+const openFile = (filePath: string) => {
+	console.log("Opening file:", filePath);
+    useStore.getState().loadFile(filePath);
+};
+
 const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 	node,
 	style,
 	dragHandle,
 }) => {
+	const clickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const preventSingleClick = useRef(false);
+
 	const {
 		projectDirectory,
 		refresh,
@@ -56,8 +64,8 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 			id: "open",
 			label: "Open",
 			onClick: () => {
-				node.open();
 				node.select();
+				openFile(node.data.fullPath);
 			},
 			separator: true,
 		},
@@ -258,30 +266,39 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 	// };
 
 	const isFile = node.data.type === FileNodeType.File;
-    if (node.data.isTemporary) {
-        style.backgroundColor = "rgba(255, 255, 0, 0.2)";
-        if(!node.isEditing){
-            node.select();
-            node.edit();
-        }
-    }
+	if (node.data.isTemporary) {
+		style.backgroundColor = "rgba(255, 255, 0, 0.2)";
+		if (!node.isEditing) {
+			node.select();
+			node.edit();
+		}
+	}
 
 	return (
 		<div
 			ref={dragHandle}
 			style={{ ...style, width: "100%", boxSizing: "border-box" }}
-			className={`
-     ${styles.treeItem}
-     ${
+			className={` ${styles.treeItem} ${
 				node.isSelected ? styles.selected : ""
-			}
-   `}
+			} `}
 			onContextMenu={onContextMenu}
-			onDoubleClick={(e) => {
-				e.stopPropagation();
-				node.edit(); // start rename on dblclick :contentReference[oaicite:2]{index=2}
+			onDoubleClick={() => {
+				if (clickTimeout.current) clearTimeout(clickTimeout.current);
+				preventSingleClick.current = true;
+				node.edit();
 			}}
-			onClick={(e) => node.handleClick(e)}
+			onClick={(e) => {
+				if (clickTimeout.current) clearTimeout(clickTimeout.current);
+
+				clickTimeout.current = setTimeout(() => {
+					if (!preventSingleClick.current) {
+						console.log("Single click");
+						node.handleClick(e);
+						openFile(node.data.fullPath);
+					}
+					preventSingleClick.current = false;
+				}, 250);
+			}}
 		>
 			{/* chevron */}
 			{!isFile && (
@@ -316,7 +333,7 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 						onKeyDown={async (e) => {
 							if (e.key === "Escape") {
 								node.reset();
-                                removeTempNodes();
+								removeTempNodes();
 							}
 							if (e.key === "Enter") {
 								if (node.data.isTemporary) {
@@ -341,13 +358,12 @@ const TreeItem: React.FC<NodeRendererProps<FileNode>> = ({
 											),
 										);
 									}
-                                    refresh(projectDirectory);
+									refresh(projectDirectory);
+								} else {
+									node.submit(
+										(e.target as HTMLInputElement).value,
+									);
 								}
-                                else{
-                                    node.submit(
-                                        (e.target as HTMLInputElement).value,
-                                    );
-                                }
 							}
 						}}
 					/>
