@@ -19,3 +19,5 @@ logs
 # /docs/*
 # !/docs/.gitkeep
 /docs-html/
+
+languages

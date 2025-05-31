@@ -7,7 +7,7 @@ import path from "path-browserify";
 import { isComponentOfType } from "@/IGCItems/utils/utils";
 import useStore from "@/store/store";
 import { Node } from "reactflow";
-import { runGraph } from "@/utils/codeExecution";
+import { executeNode } from "@/utils/codeExecution";
 
 export type GraphNodeData = {
 	filePath: string;
@@ -28,7 +28,7 @@ const RawGraphNode: IGCNodeProps<GraphNodeData> = (props) => (
 			),
             label: props.data.filePath && props.data.selectedSession ? `${path.basename(props.data.filePath)}(${props.data.selectedSession})`: "",
 			backgroundColor: GraphNode.color,
-            handleRun: () => runGraph(props.id),
+            handleRun: () => executeNode(this),
 		}}
 	/>
 );

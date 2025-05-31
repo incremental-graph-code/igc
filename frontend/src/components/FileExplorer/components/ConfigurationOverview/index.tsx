@@ -11,6 +11,7 @@ import {
 	updateExecutionRelationships,
 } from "@/utils/sessionHandler";
 import { deleteSession } from "@/requests";
+import { isIGCFile } from "@/utils/file";
 
 interface ConfigurationOverviewProps {
 	openTextDialog: (defaultName: string) => Promise<string | null>;
@@ -19,14 +20,14 @@ interface ConfigurationOverviewProps {
 const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 	openTextDialog,
 }) => {
-	const isIGCFile = useStore((state) => state.isIGCFile);
-	const currentSessionId = useStore((state) => state.currentSessionId);
+    const currentSessionId = useStore((state) => state.currentSessionId);
 	const setCurrentSessionId = useStore((state) => state.setCurrentSessionId);
 	const getSessionData = useStore((state) => state.getSessionData);
-	const selectedFile = useStore((state) => state.selectedFile);
+	const fileData = useStore((state) => state.fileData);
+	const isIGC = isIGCFile(fileData);
 
 	const currSessionData =
-		selectedFile !== null ? getSessionData(selectedFile) : undefined;
+		fileData !== null ? getSessionData(fileData.filePath) : undefined;
 	const sessionKeys =
 		currSessionData !== undefined
 			? Object.keys(currSessionData.sessions)
@@ -39,20 +40,20 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 	);
 
 	useEffect(() => {
-		if (isIGCFile) {
+		if (isIGC) {
 			setSelectedSessionId(currentSessionId);
 		} else {
 			setSelectedSessionId(null);
 		}
-	}, [currentSessionId, isIGCFile]);
+	}, [currentSessionId, isIGC]);
 
 	const handleSessionChange = (value: string) => {
-		if (selectedFile === null) {
+		if (fileData === null) {
 			return;
 		}
 		setCurrentSessionId(() => value);
-		loadSessionData(selectedFile).then((data) => {
-			updateExecutionRelationships(selectedFile, data);
+		loadSessionData(fileData.filePath).then((data) => {
+			updateExecutionRelationships(fileData.filePath, data);
 		});
 	};
 
@@ -72,13 +73,13 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 			.replace(" ", "_")}`;
 
 		const sessionName = await openTextDialog(defaultSessionName);
-		if (sessionName && selectedFile !== null) {
-			createNewSession(selectedFile, sessionName).then(() => {
-				loadSessionData(selectedFile).then(() => {
+		if (sessionName && fileData.filePath !== null) {
+			createNewSession(fileData.filePath, sessionName).then(() => {
+				loadSessionData(fileData.filePath).then(() => {
 					setCurrentSessionId(() => sessionName);
 					useStore
 						.getState()
-						.sEdges(selectedFile, (prevEdges) =>
+						.sEdges(fileData.filePath, (prevEdges) =>
 							prevEdges.filter(
 								(edge) => edge.type !== "ExecutionRelationship",
 							),
@@ -89,30 +90,30 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 	};
 	const handleDeleteSession = async () => {
 		if (
-			selectedFile === null ||
+			fileData === null ||
 			selectedSessionId === null ||
 			selectedSessionId === ""
 		) {
 			return;
 		}
 		const sessionName = selectedSessionId;
-		await deleteSession(selectedFile, sessionName);
+		await deleteSession(fileData.filePath, sessionName);
 
-		loadSessionData(selectedFile).then((sessionData) => {
+		loadSessionData(fileData.filePath).then((sessionData) => {
 			setCurrentSessionId(() => sessionData.primarySession);
-			updateExecutionRelationships(selectedFile, sessionData);
+			updateExecutionRelationships(fileData.filePath, sessionData);
 		});
 	};
 
 	useEffect(() => {
-		if (selectedFile === null) {
+		if (fileData === null) {
 			return;
 		}
-		loadSessionData(selectedFile).then((data) => {
+		loadSessionData(fileData.filePath).then((data) => {
 			setCurrentSessionId(() => data.primarySession);
-			updateExecutionRelationships(selectedFile, data);
+			updateExecutionRelationships(fileData.filePath, data);
 		});
-	}, [selectedFile]);
+	}, [fileData]);
 
 	return (
 		<div className={`
@@ -132,7 +133,7 @@ const ConfigurationOverview: React.FC<ConfigurationOverviewProps> = ({
 					onClick={handleStartNewSession}
 					className={styles.configurationOverviewButton}
 					sx={{ backgroundColor: STYLES.primary }}
-					disabled={selectedFile === null}
+					disabled={fileData === null}
 				>
 					Start New Session
 				</Button>

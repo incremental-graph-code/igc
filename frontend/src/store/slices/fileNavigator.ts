@@ -1,8 +1,9 @@
 import { getFileTree } from "@/requests";
-import { SetState } from "../store";
+import { GetState, SetState } from "../store";
 import { FileNode, FileNodeType } from "shared";
 import { NodeApi } from "react-arborist";
 import path from "path-browserify";
+import { loadSessionData, updateExecutionRelationships } from "@/utils/sessionHandler";
 
 export interface FileNavigatorSliceState {
 	fileTree: FileNode[];
@@ -23,8 +24,9 @@ export interface FileNavigatorSliceState {
 
 export const createFileNavigatorSlice = (
 	set: SetState,
+    get: GetState
 ): FileNavigatorSliceState => ({
-	fileTree: [],
+    fileTree: [],
 	loading: false,
 	error: null,
 
@@ -48,6 +50,17 @@ export const createFileNavigatorSlice = (
 			.catch((err: string) => {
 				set(() => ({ error: err, loading: false }));
 			});
+        const fileData = get().fileData;
+        if (fileData !== null) {
+            loadSessionData(fileData.filePath).then((sessionData) => {
+                set(() => ({currentSessionId: sessionData.primarySession}));
+                                                                   
+                updateExecutionRelationships(
+                    fileData.filePath,
+                    sessionData,
+                );
+            });
+        }
 	},
 	clipboard: null,
 	setClipboard: (

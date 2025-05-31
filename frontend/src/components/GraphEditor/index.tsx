@@ -194,24 +194,22 @@ const GraphEditor: React.FC = () => {
 		setSelectedEdges(newSelectedEdges);
 	}, [relationships]);
 
-	// useEffect(() => {
-	// 	// if (useStore.getState().waitForSelection) {
-	// 	// const curFile = useStore.getState().selectedFile;
-
-	// 	// NOTE: Need to check if this will only run if the selected nodes have changed, or just when the address changes. To be debugged further.
-	// 	if (selectedNodes.length > 0 && isIGC) {
-	// 		useStore.getState().setChosenNode(() => selectedNodes[0]);
-	// 		// setNodes((nds) => {
-	// 		// 	return nds.map((node) => {
-	// 		// 		if (node.id !== selectedNodes[0].id) {
-	// 		// 			node.selected = false;
-	// 		// 		}
-	// 		// 		return node;
-	// 		// 	});
-	// 		// });
-	// 	}
-	// 	// }
-	// }, [selectedNodes]);
+	useEffect(() => {
+		if (useStore.getState().waitForSelection) {
+			// NOTE: Need to check if this will only run if the selected nodes have changed, or just when the address changes. To be debugged further.
+			if (selectedNodes.length > 0 && isIGC) {
+				useStore.getState().setChosenNode(() => selectedNodes[0]);
+				setNodes((nds) => {
+					return nds.map((node) => {
+						if (node.id !== selectedNodes[0].id) {
+							node.selected = false;
+						}
+						return node;
+					});
+				});
+			}
+		}
+	}, [selectedNodes]);
 
 	// When new selections are being made, update the selected items
 	// NOTE ABOVE

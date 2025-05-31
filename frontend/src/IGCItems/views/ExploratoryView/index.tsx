@@ -209,23 +209,23 @@ const findPathToNode = (
 };
 
 const getCurrentExecutionPath = (): PathNode[] => {
-	const curFile = useStore.getState().selectedFile;
+	const fileData = useStore.getState().fileData;
 	const currentSessionId = useStore.getState().currentSessionId;
 
 	const sessionsData: IGCFileSessionData | null =
-		curFile === null
+		fileData === null
 			? null
-			: useStore.getState().getSessionData(curFile) ?? null;
+			: useStore.getState().getSessionData(fileData.filePath) ?? null;
 	if (
 		sessionsData === null ||
-		curFile === null ||
+		fileData === null ||
 		currentSessionId === null
 	) {
 		return [];
 	}
 	const nodeIdLabelPairs: { [id: string]: string } = useStore
 		.getState()
-		.getNodes(curFile)
+		.graph.nodes
 		.reduce<{ [id: string]: string }>((acc, n) => {
 			acc[n.id] = n.data.label;
 			return acc;
@@ -268,18 +268,18 @@ const RawExploratoryView = () => {
 	const highlightColor = "#ff6347";
 
 	const getPaths = (): PathNode[][] => {
-		const curFile = useStore.getState().selectedFile;
+		const fileData = useStore.getState().fileData;
 
 		const sessionsData: IGCFileSessionData | null =
-			curFile === null
+			fileData === null
 				? null
-				: useStore.getState().getSessionData(curFile) ?? null;
-		if (sessionsData === null || curFile === null) {
+				: useStore.getState().getSessionData(fileData.filePath) ?? null;
+		if (sessionsData === null || fileData === null) {
 			return [];
 		}
 		const nodeIdLabelPairs: { [id: string]: string } = useStore
 			.getState()
-			.getNodes(curFile)
+			.graph.nodes
 			.reduce<{ [id: string]: string }>((acc, n) => {
 				acc[n.id] = n.data.label;
 				return acc;
@@ -422,7 +422,7 @@ const RawExploratoryView = () => {
 		}
 	}, [contextMenu.visible, lightMode, currentSessionId]);
 
-	const selectedFile = useStore.getState().selectedFile;
+	const fileData = useStore.getState().fileData;
 	const chosenNode = useStore((state) => state.chosenNode);
 
 	useEffect(() => {
@@ -471,21 +471,21 @@ const RawExploratoryView = () => {
             }
 			originalIdPath.shift();
 			console.log("New execution path:", originalIdPath);
-			if (selectedFile === null) {
+			if (fileData === null) {
 				return;
 			}
 			openTextDialog(defaultSessionName).then((sessionName) => {
 				if (sessionName !== null) {
-					createNewSession(selectedFile, sessionName).then(() => {
-						createExecutionData(selectedFile, originalIdPath).then(
+					createNewSession(fileData.filePath, sessionName).then(() => {
+						createExecutionData(fileData.filePath, originalIdPath).then(
 							(executionData) => {
 								callExecuteMany(
 									executionData,
 									"python",
-									selectedFile,
+									fileData.filePath,
 									sessionName,
 								).then(() => {
-									loadSessionData(selectedFile).then(
+									loadSessionData(fileData.filePath).then(
 										(sessionData) => {
 											useStore
 												.getState()
@@ -493,7 +493,7 @@ const RawExploratoryView = () => {
 													() => sessionName,
 												);
 											updateExecutionRelationships(
-												selectedFile,
+												fileData.filePath,
 												sessionData,
 											);
 										},
@@ -508,7 +508,7 @@ const RawExploratoryView = () => {
 		}
 	}, [chosenNode, insertType]);
 
-	if (selectedFile === null) {
+	if (fileData === null) {
 		return <div className="text-display">No File Selected</div>;
 	} else if (currentSessionId === null) {
 		return <div className="text-display">No Session Selected</div>;
@@ -540,20 +540,21 @@ const RawExploratoryView = () => {
 				realExecutionPath.shift(); // For start node
 
 				const sessionName = await openTextDialog(defaultSessionName);
+                const fileData = useStore.getState().fileData;
 
 				if (sessionName !== null) {
-					createNewSession(selectedFile, sessionName).then(() => {
+					createNewSession(fileData.filePath, sessionName).then(() => {
 						createExecutionData(
-							selectedFile,
+							fileData.filePath,
 							realExecutionPath,
 						).then((executionData) => {
 							callExecuteMany(
 								executionData,
 								"python",
-								selectedFile,
+								fileData.filePath,
 								sessionName,
 							).then(() => {
-								loadSessionData(selectedFile).then(
+								loadSessionData(fileData.filePath).then(
 									(sessionData) => {
 										useStore
 											.getState()
@@ -561,7 +562,7 @@ const RawExploratoryView = () => {
 												() => sessionName,
 											);
 										updateExecutionRelationships(
-											selectedFile,
+											fileData.filePath,
 											sessionData,
 										);
 									},

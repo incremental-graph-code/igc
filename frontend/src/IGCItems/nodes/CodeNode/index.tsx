@@ -1,6 +1,6 @@
 import { Definitions, Dependencies } from "shared";
 import BaseNode, { IGCNodeProps } from "../BaseNode";
-import { runCode } from "@/utils/codeExecution";
+import { executeNode } from "@/utils/codeExecution";
 import useStore from "@/store/store";
 import { RegistryComponent } from "@/types/frontend";
 import { createComponent } from "@/utils/componentCache";
@@ -28,11 +28,7 @@ export const RawCodeNode: IGCCodeNodeProps = (props) => {
 	const handleRun = () => {
 		console.log("Run action triggered for node:", props.id);
 		if (props.data.codeData !== undefined && projectDirectory !== null) {
-			runCode(
-				props.data.codeData.code,
-				props.id,
-				props.data.codeData.scope,
-			);
+			executeNode(this);
 		}
 
 		// // Select the node

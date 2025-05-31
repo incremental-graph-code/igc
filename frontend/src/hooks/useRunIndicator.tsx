@@ -24,7 +24,7 @@ export const useRunIndicator = (
 				<PlayArrow />
 			</button>
 		);
-	}, []);
+	}, [disabled, execute]);
 
 	useIndicator({
 		key: key,

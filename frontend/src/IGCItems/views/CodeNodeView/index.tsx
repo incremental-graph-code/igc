@@ -9,16 +9,9 @@ import { ItemType, RegistryComponent } from "@/types/frontend";
 import useStore from "@/store/store";
 import { Node } from "reactflow";
 
-import React, { useEffect, useRef } from "react";
-import { editor, KeyCode, KeyMod } from "monaco-editor";
-import { useRunButton } from "../viewUtils";
+import React, { useCallback } from "react";
 import TabbedCodeOutput from "@/components/TabbedCodeOutput";
-import { deserializeGraphData } from "@/IGCItems/utils/serialization";
-import { saveFileContent } from "@/requests";
-import { Box } from "@mui/material";
 import MarkdownDisplay from "@/components/MarkdownDisplay";
-import { showSuggestionSnippet } from "@/utils/codeTemplates";
-import { useSaveIndicator } from "@/hooks/useSaveIndicator";
 import Editor from "@/components/Editor";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { useSyncSystem } from "@/hooks/useSyncSystem";
@@ -26,25 +19,32 @@ import { IGCGraph } from "@/types/graph";
 import { SyncSystem } from "@/adapters/consts";
 import { createSnippetSyncAdapter } from "@/adapters/snippet";
 import { getSyncAdapter } from "@/utils/syncRegistry";
-import { IGCNodeProps } from "@/IGCItems/nodes/BaseNode";
+import { IGCNodeData } from "@/IGCItems/nodes/BaseNode";
+import { useRunIndicator } from "@/hooks/useRunIndicator";
+import { executeNode } from "@/utils/codeExecution";
 
 const RawCodeNodeView: React.FC = () => {
 	const fileData = useStore((state) => state.fileData);
 	const currentSessionId = useStore((state) => state.currentSessionId);
 	const getSessionData = useStore((state) => state.getSessionData);
+	const sessionsData = getSessionData(fileData.filePath);
 
 	const getCodeNode = (
-		graph: IGCGraph,
-	): Node<IGCCodeNodeData<IGCNodeProps>> | null => {
+		graph: IGCGraph | null,
+	): Node<IGCCodeNodeData<IGCNodeData>> | null => {
 		const selectedItem = useStore.getState().selectedItem;
 		if (
-			selectedItem !== undefined &&
+            graph !== null &&
+			selectedItem !== null &&
 			selectedItem.item.type === ItemType.node &&
 			isCodeNode(selectedItem.item.object)
 		) {
-			return graph.nodes.find(
+			const n = graph.nodes.find(
 				(node: Node) => node.id === selectedItem.id,
 			);
+			if (n !== undefined) {
+				return n as Node<IGCCodeNodeData<IGCNodeData>>;
+			}
 		}
 		return null;
 	};
@@ -54,7 +54,7 @@ const RawCodeNodeView: React.FC = () => {
 			SyncSystem.Snippet,
 			(graph: IGCGraph) => getCodeNode(graph).data.codeData.code,
 			(code: string, graph: IGCGraph) => {
-				const n: Node<IGCCodeNodeData<IGCNodeProps>> =
+				const n: Node<IGCCodeNodeData<IGCNodeData>> =
 					getCodeNode(graph);
 				if (n !== null) {
 					n.data.codeData.code = code;
@@ -154,13 +154,24 @@ const RawCodeNodeView: React.FC = () => {
 	//     }
 	// };
 	const selectedCodeNode = getCodeNode(useStore.getState().graph);
-	if (selectedCodeNode === null) {
-		return <div>No Selected Item</div>;
-	}
-	const editorPathKey = `${fileData.filePath}-${selectedCodeNode.id}`;
-	// useStore.getState().setHasEditorCreated(editorPathKey);
+	const selectedItem = useStore((state) => state.selectedItem);
+	useRunIndicator(
+		useCallback(() => {
+			return (
+				selectedCodeNode !== null &&
+				currentSessionId !== null &&
+				sessionsData !== undefined
+			);
+		}, [selectedCodeNode, currentSessionId, sessionsData]),
+		useCallback(() => {
+			executeNode(selectedCodeNode);
+		}, [selectedCodeNode]),
+	);
 
-	const sessionsData = getSessionData(fileData.filePath);
+	if (selectedItem === null || selectedCodeNode === null) {
+		return <div>No Selected Code Node</div>;
+	}
+	const editorPathKey = `${fileData.filePath}\x1F${selectedCodeNode.id}`;
 	let lastExecutionData = null;
 	if (
 		currentSessionId !== null &&
@@ -191,7 +202,7 @@ const RawCodeNodeView: React.FC = () => {
 				style={{
 					flex: "1 1 auto",
 					height: "100%",
-                    position: 'relative'
+					position: "relative",
 					// minHeight: "200px",
 				}}
 			>

@@ -41,8 +41,8 @@ const componentIncludes = (
 
 const FileEditor: React.FC<FileEditorProps> = (props) => {
 	// Memoized store values to prevent unnecessary re-renders
-	// const fileData = useStore((state) => state.fileData);
-	// const isIGC = isIGCFile(fileData);
+	const fileData = useStore((state) => state.fileData);
+	const isIGC = isIGCFile(fileData);
 	
 	const selectedItem = useStore(
 		(state) => state.selectedItem,
@@ -77,7 +77,7 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 
 	// Function to get views based on selected item
 	const getViews = useCallback((): (IGCViewProps & RegistryComponent)[] => {
-        if(!isIGCFile){
+        if(!isIGC){
             return [GeneralTextView]
         }
 		const selectedComponent = selectedItem?.item;
@@ -115,7 +115,7 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 		return filteredViews.length > 0
 			? filteredViews
 			: allViews.filter((view) => view.forComponents.length === 0);
-	}, [selectedItem, nodeTypes, relationshipTypes, viewTypes, validView]);
+	}, [selectedItem, nodeTypes, relationshipTypes, viewTypes, validView, fileData]);
 
 	// Effect to handle view updates when selectedItem changes
 	useEffect(() => {
@@ -129,11 +129,11 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 		) {
 			// setNavBarContainer(() => []);
 			setViews(newViews);
-            if(newViews.length >= activeTab) {
+            if(newViews.length <= activeTab) {
                 setActiveTab(newViews.length - 1);
             }
 		}
-	}, [isIGCFile, selectedItem?.id, views]); // setNavBarContainer
+	}, [selectedItem?.id, views, fileData.filePath]); // setNavBarContainer
 
 	// Memoized function to create tab elements
 	const createTabs = useMemo(() => {
@@ -320,7 +320,5 @@ const FileEditor: React.FC<FileEditorProps> = (props) => {
 		</ResizableBox>
 	);
 };
-
-// FileEditor.whyDidYouRender = true;
 
 export default FileEditor;

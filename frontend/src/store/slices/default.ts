@@ -60,8 +60,8 @@ export interface DefaultSliceState {
 	selectedItem: Item | null;
 	setSelectedItem: (updater: (prev: Item | null) => Item | null) => void;
 
-	// waitForSelection: boolean;
-	// setWaitForSelection: (updater: (prev: boolean) => boolean) => void;
+	waitForSelection: boolean;
+	setWaitForSelection: (updater: (prev: boolean) => boolean) => void;
 
 	chosenNode: Node | null;
 	setChosenNode: (updater: (prev: Node | null) => Node | null) => void;
@@ -255,11 +255,11 @@ export const createDefaultSlice = (
 	setSelectedItem: (updater: (prev: Item | null) => Item | null) =>
 		set((state) => ({ selectedItem: updater(state.selectedItem) })),
 
-	// waitForSelection: false,
-	// setWaitForSelection: (updater: (prev: boolean) => boolean) =>
-	// 	set((state) => ({
-	// 		waitForSelection: updater(state.waitForSelection),
-	// 	})),
+	waitForSelection: false,
+	setWaitForSelection: (updater: (prev: boolean) => boolean) =>
+		set((state) => ({
+			waitForSelection: updater(state.waitForSelection),
+		})),
 
 	chosenNode: null,
 	setChosenNode: (updater: (prev: Node | null) => Node | null) =>
@@ -323,7 +323,10 @@ export const createDefaultSlice = (
 	setCurrentSessionId: (updater: (prev: string | null) => string | null) =>
 		set((state) => {
 			if (state.fileData !== null) {
-				const newSessionId = updater(state.currentSessionId);
+				let newSessionId = updater(state.currentSessionId);
+                if (newSessionId === ""){
+                    newSessionId = null; // Reset to null if empty string is provided
+                }
 				if (newSessionId !== null) {
 					setPrimarySession(state.fileData.filePath, newSessionId);
 				}

@@ -609,8 +609,8 @@ router.get("/session-data", async (req: Request, res: Response) => {
 	if (content === "") {
 		console.log("content is empty");
 	}
-	const sessionConfigData = JSON.parse(content);
-	const primarySession: string = sessionConfigData.current;
+	const mainSessionConfigData = JSON.parse(content);
+	const primarySession: string = mainSessionConfigData.current;
 	returnData.primarySession = primarySession;
 
 	// Get all session data

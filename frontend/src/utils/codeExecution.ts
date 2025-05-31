@@ -18,14 +18,14 @@ import { IGCNodeData } from "@/IGCItems/nodes/BaseNode";
 
 // Run the code analysis on the node
 export const runAnalysis = (node: Node) => {
-	const selectedFile = useStore.getState().selectedFile;
-	if (selectedFile === null) {
+	const fileData = useStore.getState().fileData;
+	if (fileData === null) {
 		return;
 	}
 	if (isCodeNode(node)) {
 		callAnalyze(node.data.codeData.code).then(
 			(response: CodeAnalysisResponse) => {
-				useStore.getState().sNodes(selectedFile, (prevNodes) => {
+				useStore.getState().updateNodes((prevNodes) => {
 					return prevNodes.map((n) => {
 						if (node.id === n.id) {
 							if (
@@ -57,16 +57,14 @@ export const runAnalysis = (node: Node) => {
 };
 
 export const runAllAnalysis = async () => {
-	const selectedFile = useStore.getState().selectedFile;
-	if (selectedFile === null) {
+	const fileData = useStore.getState().fileData;
+	if (fileData === null) {
 		return;
 	}
 
 	// Get all analysis data for all nodes
 	const nodeAnalysisData: { [nodeId: string]: CodeAnalysisResponse } = {};
-	for (const node of useStore.getState().getNodes(selectedFile) as Node<
-		IGCCodeNodeData<IGCNodeData>
-	>[]) {
+	for (const node of useStore.getState().graph.nodes) {
 		if (isCodeNode(node)) {
 			try {
 				const result = await callAnalyze(node.data.codeData.code);
@@ -82,7 +80,7 @@ export const runAllAnalysis = async () => {
 		}
 	}
 
-	useStore.getState().sNodes(selectedFile, (prevNodes) => {
+	useStore.getState().updateNodes((prevNodes) => {
 		return prevNodes.map((node) => {
 			if (node.id in nodeAnalysisData && isCodeNode(node)) {
 				node.data.codeData = {
@@ -226,109 +224,114 @@ const metaAnalysis = (
 	return node;
 };
 
-// Apply the code analysis to the node
-const applyCodeAnalysis = (
-	nodeId: string,
-	metaNodeData: CodeAnalysisResponse,
+// // Apply the code analysis to the node
+// const applyCodeAnalysis = (
+// 	nodeId: string,
+// 	metaNodeData: CodeAnalysisResponse,
+// ) => {
+// 	const selectedFile = useStore.getState().selectedFile;
+// 	if (selectedFile === null) {
+// 		return;
+// 	}
+// 	useStore.getState().sNodes(selectedFile, (prevNodes) => {
+// 		return prevNodes.map((node) => {
+// 			if (node.id === nodeId) {
+// 				return metaAnalysis(node, metaNodeData);
+// 			}
+// 			return node;
+// 		});
+// 	});
+// };
+
+// export const runCode = (code: string, nodeId: string, scope?: string): void => {
+// 	// Data store variables
+// 	const selectedFile = useStore.getState().selectedFile;
+// 	const currentSessionId = useStore.getState().currentSessionId;
+// 	if (selectedFile === null) {
+// 		return;
+// 	}
+
+// 	if (scope !== undefined) {
+// 		code = injectCode(code, scope);
+// 	}
+
+// 	callExecute(code, "python", selectedFile, nodeId, currentSessionId).then(
+// 		(response: CodeExecutionResponse) => {
+// 			loadSessionData(selectedFile).then((data) => {
+// 				updateExecutionRelationships(selectedFile, data);
+// 			});
+// 			// useStore.getState().setCodeRunData((prevData) =>
+// 			// 	prevData.set(nodeId, {
+// 			// 		stdout: response.output,
+// 			// 		stderr: response.error,
+// 			// 		configuration: response.configuration,
+// 			// 		metrics: response.metrics,
+// 			// 	}),
+// 			// );
+// 			// applyCodeAnalysis(nodeId, response.metaNodeData);
+// 			// useStore.getState().setSessions((prevSessions) => {
+// 			// 	const prevSession:
+// 			// 		| { configuration: any; executionPath: string[] }
+// 			// 		| undefined = prevSessions.get(response.metrics.sessionId);
+// 			// 	let executionPath: string[] | undefined =
+// 			// 		prevSession?.executionPath;
+// 			// 	// Add the node to the execution path
+// 			// 	if (executionPath === undefined) {
+// 			// 		executionPath = ["start", nodeId];
+// 			// 	} else {
+// 			// 		executionPath.push(nodeId);
+// 			// 	}
+// 			// 	// Create a new edge for the execution path
+// 			// 	useStore.getState().sEdges(selectedFile, (eds) => {
+// 			// 		const params = {
+// 			// 			source: executionPath[executionPath.length - 2],
+// 			// 			target: nodeId,
+// 			// 			sourceHandle: null,
+// 			// 			targetHandle: null,
+// 			// 		};
+// 			// 		return addEdge(
+// 			// 			{
+// 			// 				...params,
+// 			// 				type: "ExecutionRelationship",
+// 			// 				id: getEdgeId(params.source, params.target, eds),
+// 			// 				data: { label: executionPath.length - 1 },
+// 			// 			},
+// 			// 			eds.map((e) => {
+// 			// 				e.selected = false;
+// 			// 				return e;
+// 			// 			}),
+// 			// 		);
+// 			// 	});
+
+// 			// 	return prevSessions.set(response.metrics.sessionId, {
+// 			// 		configuration: response.configuration,
+// 			// 		executionPath: executionPath,
+// 			// 	});
+// 			// });
+// 			// useStore.getState().setCurrentSessionId(() => response.metrics.sessionId);
+// 		},
+// 	);
+// };
+
+export const executeNode = async (
+	node: Node<GraphNodeData> | Node<IGCCodeNodeData<IGCNodeData>>,
 ) => {
-	const selectedFile = useStore.getState().selectedFile;
-	if (selectedFile === null) {
-		return;
-	}
-	useStore.getState().sNodes(selectedFile, (prevNodes) => {
-		return prevNodes.map((node) => {
-			if (node.id === nodeId) {
-				return metaAnalysis(node, metaNodeData);
-			}
-			return node;
-		});
-	});
-};
-
-export const runCode = (code: string, nodeId: string, scope?: string): void => {
-	// Data store variables
-	const selectedFile = useStore.getState().selectedFile;
+	// Better if there was a more generic executable node type
+	const fileData = useStore.getState().fileData;
 	const currentSessionId = useStore.getState().currentSessionId;
-	if (selectedFile === null) {
+	if (fileData === null || currentSessionId === null) {
 		return;
 	}
-
-	if (scope !== undefined) {
-		code = injectCode(code, scope);
-	}
-
-	callExecute(code, "python", selectedFile, nodeId, currentSessionId).then(
-		(response: CodeExecutionResponse) => {
-			loadSessionData(selectedFile).then((data) => {
-				updateExecutionRelationships(selectedFile, data);
-			});
-			// useStore.getState().setCodeRunData((prevData) =>
-			// 	prevData.set(nodeId, {
-			// 		stdout: response.output,
-			// 		stderr: response.error,
-			// 		configuration: response.configuration,
-			// 		metrics: response.metrics,
-			// 	}),
-			// );
-			// applyCodeAnalysis(nodeId, response.metaNodeData);
-			// useStore.getState().setSessions((prevSessions) => {
-			// 	const prevSession:
-			// 		| { configuration: any; executionPath: string[] }
-			// 		| undefined = prevSessions.get(response.metrics.sessionId);
-			// 	let executionPath: string[] | undefined =
-			// 		prevSession?.executionPath;
-			// 	// Add the node to the execution path
-			// 	if (executionPath === undefined) {
-			// 		executionPath = ["start", nodeId];
-			// 	} else {
-			// 		executionPath.push(nodeId);
-			// 	}
-			// 	// Create a new edge for the execution path
-			// 	useStore.getState().sEdges(selectedFile, (eds) => {
-			// 		const params = {
-			// 			source: executionPath[executionPath.length - 2],
-			// 			target: nodeId,
-			// 			sourceHandle: null,
-			// 			targetHandle: null,
-			// 		};
-			// 		return addEdge(
-			// 			{
-			// 				...params,
-			// 				type: "ExecutionRelationship",
-			// 				id: getEdgeId(params.source, params.target, eds),
-			// 				data: { label: executionPath.length - 1 },
-			// 			},
-			// 			eds.map((e) => {
-			// 				e.selected = false;
-			// 				return e;
-			// 			}),
-			// 		);
-			// 	});
-
-			// 	return prevSessions.set(response.metrics.sessionId, {
-			// 		configuration: response.configuration,
-			// 		executionPath: executionPath,
-			// 	});
-			// });
-			// useStore.getState().setCurrentSessionId(() => response.metrics.sessionId);
-		},
-	);
-};
-
-export const runGraph = async (nodeId: string) => {
-	const selectedFile = useStore.getState().selectedFile;
-	const currentSessionId = useStore.getState().currentSessionId;
-	if (selectedFile === null || currentSessionId === null) {
-		return;
-	}
-	const executionData = await createExecutionData(selectedFile, [nodeId]);
+	const executionData = await createExecutionData(fileData.filePath, [
+		node.id,
+	]);
 	await callExecuteMany(
 		executionData,
 		"python",
-		selectedFile,
+		fileData.filePath,
 		currentSessionId,
 	);
-	loadSessionData(selectedFile).then((data) => {
-		updateExecutionRelationships(selectedFile, data);
+	loadSessionData(fileData.filePath).then((data) => {
+		updateExecutionRelationships(fileData.filePath, data);
 	});
 };

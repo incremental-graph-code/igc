@@ -17,7 +17,7 @@ const useStore = createWithEqualityFn<State>((set, get) => ({
 	...createDefaultSlice(set, get),
     ...createFileSlice(set, get),
     ...createNavIndicatorsSlice(set, get),
-    ...createFileNavigatorSlice(set),
+    ...createFileNavigatorSlice(set, get),
     ...createGraphSlice(set, get),
     ...createSnippetSlice(set, get),
 }), shallow);
